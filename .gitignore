@@ -1,0 +1,30 @@
+.DS_Store
+
+# SwiftPM / Xcode build products
+.build/
+DerivedData/
+dist/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Codex/local runtime state
+.codex/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Generated YouTube helper payloads. Recreate with script/install_youtube_tools.sh.
+Tools/python/
+Tools/bin/
+Tools/*.whl
+
+# Local visual QA captures can contain desktop context; keep them local.
+screenshots/
+
+# Logs and temporary files
+*.log
+*.tmp

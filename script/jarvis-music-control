@@ -1,0 +1,254 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="${JARVIS_MUSIC_URL:-http://127.0.0.1:47879}"
+TOKEN_FILE="${JARVIS_MUSIC_TOKEN_FILE:-$HOME/Library/Application Support/Music/control-token.txt}"
+
+pretty() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -m json.tool
+  else
+    cat
+  fi
+}
+
+wait_for_bridge() {
+  for _ in {1..20}; do
+    if curl -fsS "$BASE/health" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  echo "Music bridge is not reachable at $BASE. Open the Music app first." >&2
+  return 1
+}
+
+health() {
+  curl -sS "$BASE/health" | pretty
+}
+
+authed_get() {
+  wait_for_bridge
+  local path="$1"
+  shift || true
+  local token
+  token="$(cat "$TOKEN_FILE")"
+  curl -sS -H "Authorization: Bearer $token" "$BASE$path" "$@" | pretty
+}
+
+authed_post() {
+  wait_for_bridge
+  local path="$1"
+  local json="${2:-{}}"
+  local token
+  token="$(cat "$TOKEN_FILE")"
+  curl -sS -X POST -H "Authorization: Bearer $token" -H "Content-Type: application/json" --data "$json" "$BASE$path" | pretty
+}
+
+json_escape() {
+  python3 - "$1" <<'PY'
+import json, sys
+print(json.dumps(sys.argv[1]))
+PY
+}
+
+cmd="${1:-status}"
+shift || true
+
+case "$cmd" in
+  health)
+    health
+    ;;
+  status)
+    authed_get "/status"
+    ;;
+  capabilities)
+    authed_get "/capabilities"
+    ;;
+  songs)
+    authed_get "/songs"
+    ;;
+  search)
+    query="$*"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -H "Authorization: Bearer $token" --data-urlencode "q=$query" "$BASE/search" | pretty
+    ;;
+  groups)
+    authed_get "/groups"
+    ;;
+  playlist-songs)
+    name="${*:?usage: jarvis-music-control playlist-songs PLAYLIST_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -H "Authorization: Bearer $token" --data-urlencode "name=$name" "$BASE/playlist/songs" | pretty
+    ;;
+  playlist-select)
+    name="${*:?usage: jarvis-music-control playlist-select PLAYLIST_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "name=$name" "$BASE/playlist/select" | pretty
+    ;;
+  playlist-play)
+    name="${*:?usage: jarvis-music-control playlist-play PLAYLIST_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "name=$name" "$BASE/playlist/play" | pretty
+    ;;
+  playlist-create)
+    name="${*:?usage: jarvis-music-control playlist-create PLAYLIST_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "name=$name" "$BASE/playlist/create" | pretty
+    ;;
+  playlist-rename)
+    old="${1:?usage: jarvis-music-control playlist-rename OLD_NAME NEW_NAME}"
+    shift || true
+    new="${*:?usage: jarvis-music-control playlist-rename OLD_NAME NEW_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "oldName=$old" --data-urlencode "newName=$new" "$BASE/playlist/rename" | pretty
+    ;;
+  playlist-delete)
+    name="${*:?usage: jarvis-music-control playlist-delete PLAYLIST_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "name=$name" "$BASE/playlist/delete" | pretty
+    ;;
+  song-move)
+    id="${1:?usage: jarvis-music-control song-move SONG_ID PLAYLIST_NAME}"
+    shift || true
+    group="${*:?usage: jarvis-music-control song-move SONG_ID PLAYLIST_NAME}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "id=$id" --data-urlencode "group=$group" "$BASE/song/move" | pretty
+    ;;
+  play-id)
+    id="${1:?usage: jarvis-music-control play-id SONG_ID}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "id=$id" "$BASE/play" | pretty
+    ;;
+  play)
+    query="$*"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "query=$query" "$BASE/play" | pretty
+    ;;
+  pause|resume|stop|next|previous)
+    authed_post "/$cmd"
+    ;;
+  now-playing)
+    authed_get "/now-playing"
+    ;;
+  playback-state)
+    authed_get "/playback-state"
+    ;;
+  volume)
+    if [[ $# -eq 0 ]]; then
+      authed_get "/volume"
+    else
+      level="$1"
+      wait_for_bridge
+      token="$(cat "$TOKEN_FILE")"
+      curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "level=$level" "$BASE/volume" | pretty
+    fi
+    ;;
+  seek)
+    seconds="${1:?usage: jarvis-music-control seek SECONDS}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "seconds=$seconds" "$BASE/seek" | pretty
+    ;;
+  shuffle)
+    enabled="${1:?usage: jarvis-music-control shuffle true|false}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "enabled=$enabled" "$BASE/shuffle" | pretty
+    ;;
+  repeat)
+    mode="${1:?usage: jarvis-music-control repeat off|all|one}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "mode=$mode" "$BASE/repeat" | pretty
+    ;;
+  library-sync)
+    authed_get "/diagnostics/library-sync"
+    ;;
+  source-metadata)
+    id="${1:?usage: jarvis-music-control source-metadata SONG_ID}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -H "Authorization: Bearer $token" --data-urlencode "id=$id" "$BASE/diagnostics/source-metadata" | pretty
+    ;;
+  process-timeout-diagnostics)
+    authed_post "/diagnostics/process-timeout"
+    ;;
+  youtube-error-classification)
+    message="${1:?usage: jarvis-music-control youtube-error-classification MESSAGE [true|false]}"
+    timed_out="${2:-false}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" \
+      --data-urlencode "message=$message" \
+      --data-urlencode "timedOut=$timed_out" \
+      "$BASE/diagnostics/youtube-helper-error" | pretty
+    ;;
+  refresh-library)
+    authed_post "/refresh-library"
+    ;;
+  refresh-smart-picker)
+    authed_post "/refresh-smart-picker"
+    ;;
+  youtube-open)
+    value="${*:-https://www.youtube.com}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    if [[ "$value" == http* ]]; then
+      curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "url=$value" "$BASE/youtube/open" | pretty
+    else
+      curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "search=$value" "$BASE/youtube/open" | pretty
+    fi
+    ;;
+  youtube-search)
+    query="$*"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -H "Authorization: Bearer $token" --data-urlencode "q=$query" "$BASE/youtube/search" | pretty
+    ;;
+  youtube-import-activity)
+    authed_get "/youtube/import-activity"
+    ;;
+  youtube-import)
+    url="${1:?usage: jarvis-music-control youtube-import URL [TITLE...]}"
+    shift || true
+    title="$*"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "url=$url" --data-urlencode "title=$title" "$BASE/youtube/import" | pretty
+    ;;
+  open-original)
+    id="${1:?usage: jarvis-music-control open-original SONG_ID}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -X POST -H "Authorization: Bearer $token" --data-urlencode "id=$id" "$BASE/song/open-original" | pretty
+    ;;
+  *)
+    cat >&2 <<'USAGE'
+Usage: jarvis-music-control <command>
+
+Commands:
+  health, status, capabilities, songs, search QUERY, groups
+  playlist-songs NAME, playlist-select NAME, playlist-play NAME
+  playlist-create NAME, playlist-rename OLD NEW, playlist-delete NAME, song-move SONG_ID NAME
+  play QUERY, play-id SONG_ID, pause, resume, stop, next, previous, now-playing, playback-state
+  volume [0.0-1.0], seek SECONDS, shuffle true|false, repeat off|all|one
+  library-sync, source-metadata SONG_ID, process-timeout-diagnostics
+  youtube-error-classification MESSAGE [true|false]
+  refresh-library, refresh-smart-picker
+  youtube-open [URL or search], youtube-search QUERY, youtube-import-activity
+  youtube-import URL [TITLE], open-original SONG_ID
+USAGE
+    exit 2
+    ;;
+esac
