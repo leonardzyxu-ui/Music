@@ -107,6 +107,15 @@ if [[ "$VERIFY" == "1" ]]; then
     sleep 0.2
   done
   pgrep -x "$PRODUCT" >/dev/null
+
+  for _ in {1..40}; do
+    if /usr/bin/curl -fsS --noproxy 127.0.0.1,localhost http://127.0.0.1:47879/health >/dev/null 2>&1; then
+      echo "$APP_NAME bridge is healthy."
+      break
+    fi
+    sleep 0.25
+  done
+  /usr/bin/curl -fsS --noproxy 127.0.0.1,localhost http://127.0.0.1:47879/health >/dev/null
 fi
 
 if [[ "$LOGS" == "1" ]]; then
