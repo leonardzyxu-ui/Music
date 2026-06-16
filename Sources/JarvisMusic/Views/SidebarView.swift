@@ -33,6 +33,9 @@ struct SidebarView: View {
                         count: "\(library.songs.count)",
                         isSelected: library.selection == .allSongs
                     )
+                    .onTapGesture {
+                        select(.allSongs)
+                    }
                     .tag(LibrarySelection.allSongs as LibrarySelection?)
 
                     SidebarSelectionRow(
@@ -41,6 +44,9 @@ struct SidebarView: View {
                         count: "\(library.smartSongs.count)",
                         isSelected: library.selection == .smartPicker
                     )
+                    .onTapGesture {
+                        select(.smartPicker)
+                    }
                     .tag(LibrarySelection.smartPicker as LibrarySelection?)
                 }
 
@@ -52,6 +58,9 @@ struct SidebarView: View {
                             count: "\(library.songs.filter { $0.group == group }.count)",
                             isSelected: library.selection == .group(group)
                         )
+                        .onTapGesture {
+                            select(.group(group))
+                        }
                         .tag(LibrarySelection.group(group) as LibrarySelection?)
                         .contextMenu {
                             Button("Rename") {
@@ -81,6 +90,9 @@ struct SidebarView: View {
                         count: nil,
                         isSelected: library.selection == .youtube
                     )
+                    .onTapGesture {
+                        select(.youtube)
+                    }
                     .tag(LibrarySelection.youtube as LibrarySelection?)
                 }
             }
@@ -96,7 +108,15 @@ struct SidebarView: View {
                 guard let newValue else { return }
                 library.selection = newValue
             }
-        )
+            )
+    }
+
+    private func select(_ selection: LibrarySelection) {
+        var transaction = Transaction()
+        transaction.animation = nil
+        withTransaction(transaction) {
+            library.selection = selection
+        }
     }
 }
 
@@ -121,6 +141,7 @@ private struct SidebarSelectionRow: View {
         }
         .font(MusicTypography.sidebarItem)
         .foregroundStyle(isSelected ? Color.red : .primary)
+        .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
         .contentShape(Rectangle())
     }
 }
