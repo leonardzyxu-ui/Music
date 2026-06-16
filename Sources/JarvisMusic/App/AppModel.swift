@@ -72,25 +72,31 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func openYouTube(url: URL? = nil, search: String? = nil) {
+    @discardableResult
+    func openYouTube(url: URL? = nil, search: String? = nil) -> String {
         library.selection = .youtube
+        let message: String
         if let search, !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let encoded = search.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? search
             youtubeAddress = "https://www.youtube.com/results?search_query=\(encoded)"
             importPreview = nil
             importTitle = ""
             importStatus = "Choose a video, rename it, then import."
+            message = "YouTube import search opened"
         } else if let url {
             youtubeAddress = url.absoluteString
+            message = "YouTube video ready in import view"
         } else {
             youtubeAddress = "https://www.youtube.com"
             importPreview = nil
             importTitle = ""
             importStatus = "Search YouTube or paste a video URL, then rename before saving."
+            message = "YouTube import opened"
         }
         youtubeCurrentURL = youtubeAddress
-        noteImportActivity(.info, stage: nil, title: "YouTube browser opened", detail: youtubeAddress)
+        noteImportActivity(.info, stage: nil, title: message, detail: youtubeAddress)
         NSApp.activate(ignoringOtherApps: true)
+        return message
     }
 
     func openOriginalVideo(for song: Song) {
@@ -468,8 +474,8 @@ final class AppModel: ObservableObject {
             return .ok(["message": "Smart Picker refreshed", "songs": library.smartSongs.map(songPayload)])
         case ("POST", "/youtube/open"):
             let url = request.string("url").flatMap(URL.init(string:))
-            openYouTube(url: url, search: request.string("search"))
-            return .ok(["message": "YouTube browser opened", "url": youtubeAddress])
+            let message = openYouTube(url: url, search: request.string("search"))
+            return .ok(["message": message, "url": youtubeAddress])
         case ("GET", "/youtube/search"), ("POST", "/youtube/search"):
             guard let query = request.string("q") ?? request.string("query"), !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 return .error("Provide a YouTube search query in the 'q' or 'query' field.", code: "missing_query")
@@ -659,7 +665,7 @@ final class AppModel: ObservableObject {
                     parameter("timedOut", required: false, description: "true when the helper was stopped by the timeout guard.")
                 ]),
                 capabilityAction("refresh-smart-picker", "POST", "/refresh-smart-picker", true, "Recompute Your Pick rankings from listening behavior without live reordering."),
-                capabilityAction("youtube-open", "POST", "/youtube/open", true, "Open the in-app YouTube browser to a URL or search.", [
+                capabilityAction("youtube-open", "POST", "/youtube/open", true, "Open the native YouTube import view to a URL or search; the embedded browser stays hidden unless requested.", [
                     parameter("url", required: false, description: "Specific YouTube URL."),
                     parameter("search", required: false, description: "YouTube search terms.")
                 ]),
