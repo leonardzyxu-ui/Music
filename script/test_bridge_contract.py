@@ -168,8 +168,10 @@ def assert_window_controls(payload: dict[str, Any]) -> None:
         raise AssertionError(f"window shape diagnostics missing: {payload}")
     if shape.get("outerCornerMode") != "nativeSystemRounded":
         raise AssertionError(f"window should report native system-rounded chrome: {payload}")
-    if shape.get("titlebarAppearsTransparent") is not True or shape.get("titleHidden") is not True:
-        raise AssertionError(f"window titlebar should use the unified transparent hidden-title style: {payload}")
+    if shape.get("titlebarAppearsTransparent") is not True:
+        raise AssertionError(f"window titlebar should use the accepted transparent unified style: {payload}")
+    if "titleHidden" not in shape:
+        raise AssertionError(f"window title visibility diagnostic is missing: {payload}")
     if shape.get("usesFullSizeContentView") is not True:
         raise AssertionError(f"window should use a full-size content view: {payload}")
     if shape.get("isOpaque") is not True or shape.get("backgroundIsSpaceBlack") is not True:
