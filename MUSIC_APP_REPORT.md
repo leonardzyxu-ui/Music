@@ -36,9 +36,11 @@ Jarvis/control helper:
 ./script/jarvis-music-control volume 0.9
 python3 script/jarvis_music_bridge.py candidates Paradise --limit 3
 ./script/jarvis-music-control youtube-search "allowed video query"
+./script/jarvis-music-control youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 ./script/jarvis-music-control youtube-import-activity
 ./script/jarvis-music-control youtube-import "https://www.youtube.com/watch?v=VIDEO_ID" "Optional Title"
 python3 script/jarvis_music_bridge.py youtube-search "wait for me hadestown"
+python3 script/jarvis_music_bridge.py youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 python3 script/jarvis_music_bridge.py youtube-import-watch "https://www.youtube.com/watch?v=VIDEO_ID" "Optional Title"
 ./script/smoke_bridge.sh --youtube
 python3 script/audit_window_corners.py
@@ -55,7 +57,7 @@ YouTube import helper:
 ## Verified
 
 - Built and launched as `Music.app` with bundle ID `com.leoxu.Music` using `./script/build_and_run.sh --verify`.
-- Loaded 49 songs from the shared MP3 folder after the latest verified progress-probe import.
+- Loaded 50 songs from the shared MP3 folder in the latest live status check.
 - Native playback works through `AVPlayer`.
 - Bridge commands verified: health, status, search, play, pause, resume, next, previous, stop, refresh library, refresh Smart Picker.
 - Bridge playback controls now include `playback-state`, `seek`, `shuffle`, and `repeat`, so Jarvis can inspect and control playback timing/modes without UI hacks.
@@ -77,7 +79,8 @@ YouTube import helper:
 - The local Python bridge helper default timeout is now 360 seconds, so Jarvis/terminal YouTube search and import calls do not fail at the old 8-second edge while the app is legitimately working.
 - YouTube download progress now streams from `yt-dlp` output and maps into the app/bridge percentage instead of relying only on coarse stage labels. The latest short-video probe observed progress values `8 -> 12 -> 78 -> 84 -> 100`.
 - Active import/search activity rows update or clear when the matching success/failure arrives, so old `active` rows do not linger below a completed import.
-- YouTube audio import now explicitly asks yt-dlp for audio only with `--format bestaudio/best`, passes `--ffmpeg-location`, extracts to MP3, embeds thumbnails, and forces ID3v2.3 metadata compatibility for macOS/Finder.
+- YouTube audio import now explicitly asks yt-dlp for audio only with `--format bestaudio[acodec!=none]/bestaudio`, passes `--ffmpeg-location`, extracts to MP3, embeds thumbnails, and forces ID3v2.3 metadata compatibility for macOS/Finder.
+- The bridge exposes `youtube-import-plan`, a no-download diagnostic that simulates the yt-dlp selector and returns the chosen format id/codecs plus `audioOnly: true` and `sharedLibraryUnchanged: true` when the plan is safe.
 - YouTube helper failures are classified into Jarvis-safe typed errors such as private/access-restricted, unavailable, protected content, timeout, and generic helper failure. Error JSON includes `retryable` and `recoverySuggestion` when useful.
 - Process timeout cleanup is verified through protected diagnostics: a slow helper is stopped after one second, a fake partial temp MP3 is removed, and the shared library remains unchanged.
 - YouTube Import is now native-first: search/paste URL, candidate rows, rename field, permission note, flat progress bar with percentage, and Import MP3 controls are visible in Music without requiring Leo to browse YouTube first.
@@ -127,12 +130,13 @@ YouTube import helper:
 
 ## Last Verification Pass
 
-Last checked: `2026-06-16 11:23 CST`
+Last checked: `2026-06-17 01:36 CST`
 
 Commands run:
 
 ```bash
 ./script/build_and_run.sh --verify
+bash -n script/jarvis-music-control
 ./script/jarvis-music-control capabilities
 ./script/jarvis-music-control library-sync
 # targeted app-window screenshot: screenshots/sf-pro-window-controls-pass-2.png
@@ -141,6 +145,7 @@ Commands run:
 ./script/smoke_bridge.sh --youtube
 python3 script/test_bridge_contract.py
 ./script/jarvis-music-control youtube-search "OurMusicBox With Loved Ones"
+./script/jarvis-music-control youtube-import-plan "https://www.youtube.com/watch?v=Ys7-6_t7OEQ"
 ./script/jarvis-music-control youtube-open "OurMusicBox With Loved Ones"
 ./script/jarvis-music-control youtube-import-activity
 ./script/jarvis-music-control youtube-import "https://www.youtube.com/results?search_query=music" "Invalid"
@@ -171,6 +176,7 @@ python3 script/jarvis_music_bridge.py volume
 python3 script/jarvis_music_bridge.py youtube-open "wait for me hadestown"
 python3 script/jarvis_music_bridge.py youtube-import-activity
 python3 script/jarvis_music_bridge.py youtube-search "wait for me hadestown"
+python3 script/jarvis_music_bridge.py youtube-import-plan "https://www.youtube.com/watch?v=Ys7-6_t7OEQ"
 python3 script/jarvis_music_bridge.py youtube-import "https://www.youtube.com/watch?v=3OJWfgCGGl0" "Codex Progress Probe - With Loved Ones"
 python3 script/jarvis_music_bridge.py youtube-import-watch --help
 swift build
@@ -178,12 +184,14 @@ swift build
 python3 script/jarvis_music_bridge.py window-controls
 python3 -m py_compile script/jarvis_music_bridge.py script/test_bridge_contract.py
 python3 script/test_bridge_contract.py
+python3 script/audit_window_corners.py
+python3 script/jarvis_music_bridge.py youtube-search "beauty and a beat" --limit 2
 lsof -nP -iTCP:47879 -sTCP:LISTEN
 ./script/jarvis-music-control now-playing
 ./script/jarvis-music-control volume
 ```
 
-Result: build succeeded, targeted app-window inspection showed the native-first YouTube Import screen with browser hidden by default, native candidate search on the left, rename/import/progress controls visible on the right, and clean non-stale status text. Native traffic-light diagnostics report close/minimize/zoom buttons visible and enabled. Window-shape diagnostics now report an opaque native space-black backing with custom transparent frame/content masks disabled, traffic lights at `x=24/47/70, y=5`, and a 28-point rounded inner sidebar. Fallback artwork uses the correct Music logo, library-sync diagnostics report active 10-second auto-refresh and 49 songs, playlist controls passed create/select/read/rename/delete checks, playback controls passed state/seek/shuffle/repeat checks, stop clears the queue snapshot to `Idle`, source URL metadata recovery passed against the smoke-test MP3 without relying on app database state, process-timeout diagnostics stopped a slow helper after about one second and cleaned temp output, YouTube helper error classification passed, YouTube search returned structured candidates, invalid YouTube import returns typed code `not_youtube_video_url` and leaves song count unchanged, yt-dlp import command is audio-only via `--format bestaudio/best`, real import progress streamed through the app/bridge during the progress probe, full bridge smoke tests and contract tests passed, playback ended stopped with idle queue/time, and app volume was restored.
+Result: build succeeded, targeted app-window inspection showed the native-first YouTube Import screen with browser hidden by default, native candidate search on the left, rename/import/progress controls visible on the right, and clean non-stale status text. Native traffic-light diagnostics report close/minimize/zoom buttons visible and enabled. Window-shape diagnostics now report an opaque native space-black backing with custom transparent frame/content masks disabled, traffic lights at `x=24/47/70, y=5`, and a 28-point rounded inner sidebar. The current live `/status` check reports 50 songs, selected `All Songs`, and idle YouTube import status. Fallback artwork uses the correct Music logo, playlist controls passed create/select/read/rename/delete checks, playback controls passed state/seek/shuffle/repeat checks, stop clears the queue snapshot to `Idle`, source URL metadata recovery passed against the smoke-test MP3 without relying on app database state, process-timeout diagnostics stopped a slow helper after about one second and cleaned temp output, YouTube helper error classification passed, YouTube search returned structured candidates with thumbnail URLs, invalid YouTube import returns typed code `not_youtube_video_url` and leaves song count unchanged, yt-dlp import planning verifies audio-only selection via `--format bestaudio[acodec!=none]/bestaudio` with `videoCodec: none`, `audioOnly: true`, and `sharedLibraryUnchanged: true`, real import progress streamed through the app/bridge during the progress probe, full bridge smoke tests and contract tests passed, playback ended stopped with idle queue/time, and app volume was restored.
 
 ## What I Will Do Next
 

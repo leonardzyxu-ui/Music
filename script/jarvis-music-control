@@ -3,6 +3,8 @@ set -euo pipefail
 
 BASE="${JARVIS_MUSIC_URL:-http://127.0.0.1:47879}"
 TOKEN_FILE="${JARVIS_MUSIC_TOKEN_FILE:-$HOME/Library/Application Support/Music/control-token.txt}"
+export NO_PROXY="${NO_PROXY:+$NO_PROXY,}127.0.0.1,localhost"
+export no_proxy="${no_proxy:+$no_proxy,}127.0.0.1,localhost"
 
 pretty() {
   if command -v python3 >/dev/null 2>&1; then
@@ -194,6 +196,14 @@ case "$cmd" in
       --data-urlencode "timedOut=$timed_out" \
       "$BASE/diagnostics/youtube-helper-error" | pretty
     ;;
+  youtube-import-plan)
+    url="${1:?usage: jarvis-music-control youtube-import-plan URL}"
+    wait_for_bridge
+    token="$(cat "$TOKEN_FILE")"
+    curl -sS -G -H "Authorization: Bearer $token" \
+      --data-urlencode "url=$url" \
+      "$BASE/diagnostics/youtube-import-plan" | pretty
+    ;;
   refresh-library)
     authed_post "/refresh-library"
     ;;
@@ -244,7 +254,7 @@ Commands:
   play QUERY, play-id SONG_ID, pause, resume, stop, next, previous, now-playing, playback-state
   volume [0.0-1.0], seek SECONDS, shuffle true|false, repeat off|all|one
   library-sync, source-metadata SONG_ID, process-timeout-diagnostics
-  youtube-error-classification MESSAGE [true|false]
+  youtube-error-classification MESSAGE [true|false], youtube-import-plan URL
   refresh-library, refresh-smart-picker
   youtube-open [URL or search], youtube-search QUERY, youtube-import-activity
   youtube-import URL [TITLE], open-original SONG_ID

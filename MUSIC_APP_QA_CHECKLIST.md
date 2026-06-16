@@ -59,7 +59,7 @@
 - Auto-sync is active through a 10-second folder fingerprint check and exposes diagnostics for library path, scan interval, last scan time, song count, and added/removed/changed counts.
 - Groups/playlists display and can be selected.
 - Smart Picker refresh uses a snapshot ranking and does not live-reorder while playing.
-- Latest verified library count: 49 songs after the YouTube progress-probe import and Leo's current library state.
+- Latest verified library count: 50 songs in the 2026-06-17 live status check.
 - Silent native playback smoke test passes through the bridge: app volume is set to 0, the smoke import plays, `/now-playing` confirms it, playback stops, and app volume is restored.
 - Bridge playback-state, seek, shuffle, and repeat controls are verified, and `stop` clears the queue snapshot back to `Idle`.
 
@@ -76,6 +76,7 @@
 - Active import/search activity rows update or clear instead of piling up stale `active` rows after success/failure.
 - Import is enabled only for a specific supported YouTube video URL.
 - Import uses yt-dlp and ffmpeg, saves MP3 into the shared library, stores source URL, and refreshes the library.
+- Import planning uses `--format bestaudio[acodec!=none]/bestaudio`; `youtube-import-plan` must report `audioOnly: true` and `sharedLibraryUnchanged: true` before a risky real import is attempted.
 - yt-dlp/ffmpeg helper subprocesses have bounded timeouts and return friendly errors instead of making the app or Jarvis bridge hang forever. Current search timeout is `60` seconds; full import remains bounded separately.
 - The local Python bridge helper default timeout must be long enough for YouTube import/search (`360` seconds), not the old 8-second edge.
 - Process timeout diagnostics simulate a slow helper outside the shared MP3 folder, stop it after one second, remove the fake partial temp MP3, and prove the shared library count is unchanged.
@@ -94,7 +95,7 @@
 ## Jarvis Bridge
 
 - Local control bridge listens only on 127.0.0.1 and uses the local token.
-- Capabilities, status, search, groups, playlist controls, play, pause, resume, stop, next, previous, now-playing, playback-state, seek, shuffle, repeat, volume, refresh-library, refresh-smart-picker, youtube-open, youtube-search, youtube-import-activity, and youtube-import return structured JSON.
+- Capabilities, status, search, groups, playlist controls, play, pause, resume, stop, next, previous, now-playing, playback-state, seek, shuffle, repeat, volume, refresh-library, refresh-smart-picker, youtube-open, youtube-search, youtube-import-plan, youtube-import-activity, and youtube-import return structured JSON.
 - Jarvis can list playlist songs, select playlists, play playlist snapshots, create/rename/delete custom playlists, and move songs to playlists through typed bridge actions.
 - Library sync diagnostics are available through the bridge, shell helper, and Python client.
 - Source metadata diagnostics are available through the bridge, shell helper, and Python client for verifying imported-song source URL recovery.

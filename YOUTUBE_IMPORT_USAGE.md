@@ -28,9 +28,11 @@ cd "/Users/leoxu/Library/CloudStorage/OneDrive-YKPaoSchool上海民办包玉刚�
 
 ./script/jarvis-music-control youtube-open "search words"
 ./script/jarvis-music-control youtube-search "search words"
+./script/jarvis-music-control youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 ./script/jarvis-music-control youtube-import-activity
 ./script/jarvis-music-control youtube-open "https://www.youtube.com/watch?v=VIDEO_ID"
 ./script/jarvis-music-control youtube-import "https://www.youtube.com/watch?v=VIDEO_ID" "Optional Title"
+python3 script/jarvis_music_bridge.py youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 python3 script/jarvis_music_bridge.py youtube-import-watch "https://www.youtube.com/watch?v=VIDEO_ID" "Optional Title"
 ./script/jarvis-music-control open-original SONG_ID
 ./script/jarvis-music-control process-timeout-diagnostics
@@ -38,7 +40,9 @@ python3 script/jarvis_music_bridge.py youtube-import-watch "https://www.youtube.
 ./script/cleanup_smoke_imports.sh
 ```
 
-The app must be open for the local bridge commands to work.
+The app must be open for the local bridge commands to work. The shell helper automatically bypasses `http_proxy`/`https_proxy` for `127.0.0.1` and `localhost`, so Leo can leave a local proxy enabled without breaking bridge calls.
+
+Use `youtube-import-plan` when you want to prove a video will use the audio-only selector without downloading anything or writing to the shared MP3 folder. A safe result reports `audioOnly: true` and `sharedLibraryUnchanged: true`.
 
 Smoke test already verified:
 
