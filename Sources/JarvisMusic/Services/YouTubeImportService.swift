@@ -295,7 +295,7 @@ final class YouTubeImportService {
                 "--socket-timeout", "20",
                 "--retries", "3",
                 "--fragment-retries", "3",
-                "--format", "bestaudio/best",
+                "--format", "bestaudio[acodec!=none]/bestaudio",
                 "--ffmpeg-location", ffmpegURL.path,
                 "--extract-audio",
                 "--audio-format", "mp3",
