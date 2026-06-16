@@ -10,6 +10,10 @@ The bridge is bound to `127.0.0.1` and protected endpoints require the local
 token. Query parameters use normal form decoding, so multi-word values from
 Jarvis or the CLI arrive with spaces intact.
 
+The provided Python and shell helpers bypass `http_proxy`/`https_proxy` for
+`127.0.0.1` and `localhost`, so Leo can leave a local proxy enabled while
+Jarvis still talks directly to Music.
+
 Jarvis should read the token locally and send it as:
 
 ```http
@@ -67,7 +71,9 @@ or a shell helper:
 - `GET /playback-state`
 - `GET /volume`
 - `GET /diagnostics/library-sync`
+- `GET /diagnostics/window-controls`
 - `GET /diagnostics/source-metadata?id=<song-id>`
+- `GET /diagnostics/youtube-import-plan?url=<youtube-url>`
 - `POST /diagnostics/process-timeout`
 - `POST /play?id=<song-id>` or `POST /play?query=<song title>`
 - `POST /play-by-id?id=<song-id>`
@@ -115,10 +121,11 @@ Recommended YouTube import flow:
 
 1. Call `/youtube/search?q=...` to get structured candidates.
 2. Ask Leo or Jarvis policy to choose only content Leo is allowed to save.
-3. Call `/youtube/import?url=...&title=...`.
-4. Poll `/youtube/import-activity` while the import is running. The payload includes `progress`, `progressPercent`, `status`, and recent metadata/download/tagging/refresh/success/failure activity.
-5. Call `/search?q=<title>` to confirm the imported song and stored source URL.
-6. Call `/song/open-original?id=...` when Leo asks to view the original video.
+3. Call `/diagnostics/youtube-import-plan?url=...` before a real import. A safe plan reports `audioOnly: true`, `videoCodec: "none"`, and `sharedLibraryUnchanged: true`.
+4. Call `/youtube/import?url=...&title=...`.
+5. Poll `/youtube/import-activity` while the import is running. The payload includes `progress`, `progressPercent`, `status`, and recent metadata/download/tagging/refresh/success/failure activity.
+6. Call `/search?q=<title>` to confirm the imported song and stored source URL.
+7. Call `/song/open-original?id=...` when Leo asks to view the original video.
 
 Recommended Python flow when Jarvis wants a single helper call:
 
@@ -157,6 +164,7 @@ CLI helper:
 ./script/jarvis-music-control status
 ./script/jarvis-music-control capabilities
 ./script/jarvis-music-control library-sync
+./script/jarvis-music-control window-controls
 ./script/jarvis-music-control source-metadata SONG_ID
 ./script/jarvis-music-control process-timeout-diagnostics
 ./script/jarvis-music-control playlist-songs "Your Pick"
@@ -170,6 +178,7 @@ CLI helper:
 ./script/jarvis-music-control repeat off
 ./script/jarvis-music-control volume 0.9
 ./script/jarvis-music-control youtube-search "lofi study music"
+./script/jarvis-music-control youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 ./script/jarvis-music-control youtube-import-activity
 python3 script/jarvis_music_bridge.py youtube-import-watch "https://www.youtube.com/watch?v=VIDEO_ID" "Optional Title"
 ```
@@ -179,6 +188,7 @@ Python helper:
 ```bash
 python3 script/jarvis_music_bridge.py status
 python3 script/jarvis_music_bridge.py library-sync
+python3 script/jarvis_music_bridge.py window-controls
 python3 script/jarvis_music_bridge.py source-metadata SONG_ID
 python3 script/jarvis_music_bridge.py process-timeout-diagnostics
 python3 script/jarvis_music_bridge.py playlist-songs "Your Pick"
@@ -191,6 +201,7 @@ python3 script/jarvis_music_bridge.py seek 0
 python3 script/jarvis_music_bridge.py shuffle false
 python3 script/jarvis_music_bridge.py repeat off
 python3 script/jarvis_music_bridge.py youtube-search "lofi study music"
+python3 script/jarvis_music_bridge.py youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 python3 script/jarvis_music_bridge.py youtube-import-activity
 python3 script/jarvis_music_bridge.py youtube-import-watch "https://www.youtube.com/watch?v=VIDEO_ID" "Optional Title"
 ```

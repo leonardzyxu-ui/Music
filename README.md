@@ -40,6 +40,7 @@ Useful local checks:
 python3 script/jarvis_music_bridge.py health
 python3 script/jarvis_music_bridge.py status
 python3 script/jarvis_music_bridge.py capabilities
+python3 script/jarvis_music_bridge.py youtube-import-plan "https://www.youtube.com/watch?v=VIDEO_ID"
 python3 script/test_bridge_contract.py
 ```
 
