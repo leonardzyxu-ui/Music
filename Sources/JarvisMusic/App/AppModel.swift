@@ -477,9 +477,11 @@ final class AppModel: ObservableObject {
             do {
                 let limit = Int(request.string("limit") ?? "") ?? 8
                 let results = try await youtube.search(query: query, limit: limit)
+                let payload = results.map(importPreviewPayload)
                 return .ok([
                     "query": query,
-                    "results": results.map(importPreviewPayload)
+                    "results": payload,
+                    "candidates": payload
                 ])
             } catch {
                 return bridgeError(for: error, fallbackCode: "youtube_search_failed")
@@ -537,6 +539,7 @@ final class AppModel: ObservableObject {
             "libraryPath": library.libraryURL.displayPath,
             "songCount": library.songs.count,
             "groups": library.groups,
+            "selection": selectionPayload(library.selection ?? .allSongs),
             "playing": playback.isPlaying,
             "volume": playback.volume,
             "nowPlaying": playback.currentSong.map(songPayload) ?? NSNull(),
@@ -758,6 +761,35 @@ final class AppModel: ObservableObject {
             "duration": preview.duration ?? NSNull(),
             "durationText": preview.duration.map(MusicFormatters.duration) ?? NSNull()
         ]
+    }
+
+    private func selectionPayload(_ selection: LibrarySelection) -> [String: Any] {
+        switch selection {
+        case .allSongs:
+            return [
+                "id": "all-songs",
+                "title": selection.title,
+                "type": "library"
+            ]
+        case .smartPicker:
+            return [
+                "id": "smart-picker",
+                "title": selection.title,
+                "type": "smart"
+            ]
+        case .group(let group):
+            return [
+                "id": StableID.shortHash(group, prefix: "group-"),
+                "title": group,
+                "type": "playlist"
+            ]
+        case .youtube:
+            return [
+                "id": "youtube-import",
+                "title": selection.title,
+                "type": "import"
+            ]
+        }
     }
 
     private func youtubeImportPayload() -> [String: Any] {

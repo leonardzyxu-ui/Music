@@ -25,43 +25,49 @@ struct SidebarView: View {
             .padding(.top, 14)
             .padding(.bottom, 8)
 
-            List(selection: selectionBinding) {
+            List {
                 Section("Library") {
-                    SidebarSelectionRow(
-                        icon: "music.note",
-                        title: "Songs",
-                        count: "\(library.songs.count)",
-                        isSelected: library.selection == .allSongs
-                    )
-                    .onTapGesture {
+                    Button {
                         select(.allSongs)
+                    } label: {
+                        SidebarSelectionRow(
+                            icon: "music.note",
+                            title: "Songs",
+                            count: "\(library.songs.count)",
+                            isSelected: library.selection == .allSongs
+                        )
                     }
-                    .tag(LibrarySelection.allSongs as LibrarySelection?)
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
 
-                    SidebarSelectionRow(
-                        icon: "sparkles",
-                        title: "Your Pick",
-                        count: "\(library.smartSongs.count)",
-                        isSelected: library.selection == .smartPicker
-                    )
-                    .onTapGesture {
+                    Button {
                         select(.smartPicker)
+                    } label: {
+                        SidebarSelectionRow(
+                            icon: "sparkles",
+                            title: "Your Pick",
+                            count: "\(library.smartSongs.count)",
+                            isSelected: library.selection == .smartPicker
+                        )
                     }
-                    .tag(LibrarySelection.smartPicker as LibrarySelection?)
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
                 }
 
                 Section("Playlists") {
                     ForEach(library.groups, id: \.self) { group in
-                        SidebarSelectionRow(
-                            icon: "square.fill",
-                            title: group,
-                            count: "\(library.songs.filter { $0.group == group }.count)",
-                            isSelected: library.selection == .group(group)
-                        )
-                        .onTapGesture {
+                        Button {
                             select(.group(group))
+                        } label: {
+                            SidebarSelectionRow(
+                                icon: "square.fill",
+                                title: group,
+                                count: "\(library.songs.filter { $0.group == group }.count)",
+                                isSelected: library.selection == .group(group)
+                            )
                         }
-                        .tag(LibrarySelection.group(group) as LibrarySelection?)
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
                         .contextMenu {
                             Button("Rename") {
                                 if let name = Prompt.text(title: "Rename Group", message: "Rename '\(group)' to:", defaultValue: group) {
@@ -84,31 +90,23 @@ struct SidebarView: View {
                 }
 
                 Section("Import") {
-                    SidebarSelectionRow(
-                        icon: "square.and.arrow.down",
-                        title: "YouTube",
-                        count: nil,
-                        isSelected: library.selection == .youtube
-                    )
-                    .onTapGesture {
+                    Button {
                         select(.youtube)
+                    } label: {
+                        SidebarSelectionRow(
+                            icon: "square.and.arrow.down",
+                            title: "YouTube",
+                            count: nil,
+                            isSelected: library.selection == .youtube
+                        )
                     }
-                    .tag(LibrarySelection.youtube as LibrarySelection?)
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
                 }
             }
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
         }
-    }
-
-    private var selectionBinding: Binding<LibrarySelection?> {
-        Binding(
-            get: { library.selection },
-            set: { newValue in
-                guard let newValue else { return }
-                library.selection = newValue
-            }
-            )
     }
 
     private func select(_ selection: LibrarySelection) {

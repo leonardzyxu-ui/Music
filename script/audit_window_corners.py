@@ -26,17 +26,29 @@ def find_music_window_id() -> str:
         check=False,
     )
     time.sleep(0.8)
+    pid_result = subprocess.run(
+        ["pgrep", "-x", "LeoMusic"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    target_pids = {pid.strip() for pid in pid_result.stdout.splitlines() if pid.strip()}
+    if not target_pids:
+        raise RuntimeError("Could not find the LeoMusic process to audit.")
 
     script = r'''
 import CoreGraphics
 import Foundation
 
+let targetPIDs = Set(CommandLine.arguments.dropFirst())
 let opts = CGWindowListOption(arrayLiteral: .optionOnScreenOnly, .excludeDesktopElements)
 let windows = CGWindowListCopyWindowInfo(opts, CGWindowID(0)) as? [[String: Any]] ?? []
 for window in windows {
     let owner = window[kCGWindowOwnerName as String] as? String ?? ""
     let name = window[kCGWindowName as String] as? String ?? ""
-    if owner == "Music" && name == "Music" {
+    let pid = String(describing: window[kCGWindowOwnerPID as String] ?? "")
+    if targetPIDs.contains(pid) && owner == "Music" && name == "Music" {
         print(window[kCGWindowNumber as String] ?? "")
         exit(0)
     }
@@ -45,7 +57,7 @@ exit(1)
 '''
     for _ in range(10):
         result = subprocess.run(
-            ["swift", "-e", script],
+            ["swift", "-e", script, *sorted(target_pids)],
             cwd=ROOT,
             capture_output=True,
             text=True,

@@ -127,7 +127,7 @@ def assert_capabilities(payload: dict[str, Any]) -> None:
 
 def assert_status(payload: dict[str, Any]) -> None:
     assert_ok(payload)
-    for key in ["app", "libraryPath", "songCount", "playing", "volume", "queue", "smartPicker", "youtubeTools", "youtubeImport", "bridge"]:
+    for key in ["app", "libraryPath", "songCount", "selection", "playing", "volume", "queue", "smartPicker", "youtubeTools", "youtubeImport", "bridge"]:
         if key not in payload:
             raise AssertionError(f"missing status key {key}: {payload}")
     if payload["app"] != "Music":
@@ -136,6 +136,12 @@ def assert_status(payload: dict[str, Any]) -> None:
         raise AssertionError(f"songCount should be positive: {payload['songCount']}")
     if "librarySync" not in payload:
         raise AssertionError(f"status missing librarySync: {payload}")
+    selection = payload.get("selection")
+    if not isinstance(selection, dict):
+        raise AssertionError(f"status selection should be an object: {payload}")
+    for key in ["id", "title", "type"]:
+        if not selection.get(key):
+            raise AssertionError(f"status selection missing {key}: {payload}")
 
 
 def assert_library_sync(payload: dict[str, Any]) -> None:
