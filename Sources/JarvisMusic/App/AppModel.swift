@@ -328,6 +328,15 @@ final class AppModel: ObservableObject {
             }
         case ("GET", "/diagnostics/youtube-helper-error"), ("POST", "/diagnostics/youtube-helper-error"):
             return .ok(youtubeHelperErrorDiagnosticPayload(request))
+        case ("GET", "/diagnostics/youtube-import-plan"), ("POST", "/diagnostics/youtube-import-plan"):
+            guard let urlString = request.string("url"), let url = URL(string: urlString) else {
+                return .error("Provide a YouTube video URL in the 'url' field.", code: "missing_youtube_url")
+            }
+            do {
+                return .ok(try await youtube.audioOnlyPlan(url: url))
+            } catch {
+                return bridgeError(for: error, fallbackCode: "youtube_import_plan_failed")
+            }
         case ("POST", "/play"):
             return playBridge(request)
         case ("POST", "/play-by-query"):
@@ -663,6 +672,9 @@ final class AppModel: ObservableObject {
                 capabilityAction("youtube-helper-error-diagnostics", "POST", "/diagnostics/youtube-helper-error", true, "Classify a captured yt-dlp/ffmpeg failure into Jarvis-safe YouTube error codes.", [
                     parameter("message", required: true, description: "Helper stderr/stdout text to classify."),
                     parameter("timedOut", required: false, description: "true when the helper was stopped by the timeout guard.")
+                ]),
+                capabilityAction("youtube-import-plan-diagnostics", "GET", "/diagnostics/youtube-import-plan", true, "Non-destructively simulate the YouTube import selector and verify it chooses audio-only media.", [
+                    parameter("url", required: true, description: "Specific YouTube watch/video URL.")
                 ]),
                 capabilityAction("refresh-smart-picker", "POST", "/refresh-smart-picker", true, "Recompute Your Pick rankings from listening behavior without live reordering."),
                 capabilityAction("youtube-open", "POST", "/youtube/open", true, "Open the native YouTube import view to a URL or search; the embedded browser stays hidden unless requested.", [

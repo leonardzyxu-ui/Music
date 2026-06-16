@@ -140,6 +140,9 @@ class MusicBridgeClient:
             query={"message": message, "timedOut": "true" if timed_out else "false"},
         )
 
+    def youtube_import_plan(self, url: str) -> dict[str, Any]:
+        return self._request("GET", "/diagnostics/youtube-import-plan", query={"url": url})
+
     def play(self, query: str | None = None, song_id: str | None = None) -> dict[str, Any]:
         if song_id:
             return self._request("POST", "/play", query={"id": song_id})
@@ -396,6 +399,9 @@ def main(argv: list[str] | None = None) -> int:
     youtube_error.add_argument("message")
     youtube_error.add_argument("--timed-out", action="store_true")
 
+    youtube_plan = subparsers.add_parser("youtube-import-plan")
+    youtube_plan.add_argument("url")
+
     youtube_import = subparsers.add_parser("youtube-import")
     youtube_import.add_argument("url")
     youtube_import.add_argument("title", nargs="?", default=None)
@@ -464,6 +470,8 @@ def dispatch(client: MusicBridgeClient, args: argparse.Namespace) -> dict[str, A
         return client.youtube_search(args.query, limit=args.limit)
     if command == "youtube_error_classification":
         return client.youtube_error_classification(args.message, timed_out=args.timed_out)
+    if command == "youtube_import_plan":
+        return client.youtube_import_plan(args.url)
     if command == "youtube_import":
         return client.youtube_import(args.url, title=args.title)
     if command == "youtube_import_watch":

@@ -157,6 +157,8 @@ enum YouTubeImportError: LocalizedError {
 
 @MainActor
 final class YouTubeImportService {
+    static let audioOnlyFormatSelector = "bestaudio[acodec!=none]/bestaudio"
+
     private enum HelperTimeout {
         static let metadata: TimeInterval = 35
         static let search: TimeInterval = 60
@@ -268,6 +270,54 @@ final class YouTubeImportService {
         }
     }
 
+    func audioOnlyPlan(url: URL) async throws -> [String: Any] {
+        guard Self.isYouTubeURL(url) else { throw YouTubeImportError.invalidURL }
+        guard Self.isLikelyVideoURL(url) else { throw YouTubeImportError.notVideoURL }
+        guard let ytDLPURL else { throw YouTubeImportError.missingTool("yt-dlp") }
+
+        let result = try await ProcessRunner.run(
+            ytDLPURL,
+            arguments: [
+                "--simulate",
+                "--no-playlist",
+                "--no-warnings",
+                "--socket-timeout", "20",
+                "--format", Self.audioOnlyFormatSelector,
+                "--print", "%(format_id)s\t%(vcodec)s\t%(acodec)s\t%(ext)s",
+                url.absoluteString
+            ],
+            timeoutSeconds: HelperTimeout.metadata
+        )
+        guard result.succeeded else {
+            throw helperError(result)
+        }
+
+        guard let line = result.stdout
+            .split(separator: "\n")
+            .map(String.init)
+            .first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw YouTubeImportError.noOutput
+        }
+
+        let pieces = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+        let formatID = pieces.indices.contains(0) ? pieces[0] : ""
+        let videoCodec = pieces.indices.contains(1) ? pieces[1] : ""
+        let audioCodec = pieces.indices.contains(2) ? pieces[2] : ""
+        let fileExtension = pieces.indices.contains(3) ? pieces[3] : ""
+        let audioOnly = videoCodec == "none" && audioCodec != "none" && !audioCodec.isEmpty
+
+        return [
+            "url": url.absoluteString,
+            "formatSelector": Self.audioOnlyFormatSelector,
+            "formatID": formatID,
+            "videoCodec": videoCodec,
+            "audioCodec": audioCodec,
+            "extension": fileExtension,
+            "audioOnly": audioOnly,
+            "sharedLibraryUnchanged": true
+        ]
+    }
+
     func importAudio(url: URL, titleOverride: String?, progress: YouTubeImportProgressHandler? = nil) async throws -> URL {
         guard Self.isYouTubeURL(url) else { throw YouTubeImportError.invalidURL }
         guard Self.isLikelyVideoURL(url) else { throw YouTubeImportError.notVideoURL }
@@ -295,7 +345,7 @@ final class YouTubeImportService {
                 "--socket-timeout", "20",
                 "--retries", "3",
                 "--fragment-retries", "3",
-                "--format", "bestaudio[acodec!=none]/bestaudio",
+                "--format", Self.audioOnlyFormatSelector,
                 "--ffmpeg-location", ffmpegURL.path,
                 "--extract-audio",
                 "--audio-format", "mp3",

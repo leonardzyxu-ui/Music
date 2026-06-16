@@ -50,6 +50,7 @@ REQUIRED_ACTIONS = {
     "source-metadata-diagnostics",
     "process-timeout-diagnostics",
     "youtube-helper-error-diagnostics",
+    "youtube-import-plan-diagnostics",
     "refresh-smart-picker",
     "youtube-open",
     "youtube-search",
