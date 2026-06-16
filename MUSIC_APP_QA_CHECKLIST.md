@@ -7,7 +7,7 @@
 - Traffic-light buttons must not hug the left edge; they should sit comfortably inside the sidebar/top-left chrome area.
 - The whole app window must use one opaque, native space-black surface. Do not reintroduce a transparent custom shell/crescent while chasing larger corner radius.
 - The sidebar remains the rounded inner pane, with no competing transparent rounded rectangle around the traffic lights.
-- Current required shell metrics: native opaque outer window, sidebar inset `10`, inner sidebar radius `28`, traffic lights at `x=24/47/70`, `y=5`.
+- Current accepted shell metrics in `MusicWindowMetrics`: native opaque outer window, outer radius `34`, sidebar inset `0`, sidebar trailing gap `6`, sidebar leading radius `34`, sidebar trailing radius `26`, and native traffic-light padding `x=20`, `y=14`.
 - `script/test_bridge_contract.py` must fail if custom frame/content masks return, if the window stops being opaque space-black, or if traffic lights move outside the accepted x range.
 - `python3 script/audit_window_corners.py` must pass and produce a Music-window-only top-left crop before calling corner work done.
 - The top titlebar area and app body must be one continuous Apple-style space-black surface, with no horizontal color band.

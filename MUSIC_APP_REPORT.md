@@ -24,6 +24,7 @@ Jarvis/control helper:
 ./script/jarvis-music-control health
 ./script/jarvis-music-control capabilities
 ./script/jarvis-music-control library-sync
+./script/jarvis-music-control window-controls
 ./script/jarvis-music-control source-metadata SONG_ID
 ./script/jarvis-music-control process-timeout-diagnostics
 ./script/jarvis-music-control youtube-error-classification "ERROR: Video unavailable"
@@ -103,7 +104,7 @@ YouTube import helper:
 - The scanner now recovers original YouTube URLs from MP3 metadata even when no prior database record is supplied. Verified through the protected `source-metadata` bridge diagnostic during `./script/smoke_bridge.sh --youtube`.
 - `Cmd-W` closes the main window.
 - The window shell now uses native AppKit titled hidden-titlebar chrome again. This removes the fragile clipped/borderless shell that caused broken corner resizing and non-working traffic lights.
-- Native AppKit traffic-light buttons are present, visible, and enabled according to the protected `window-controls` diagnostic. Latest diagnostic places them at `x=24/47/70, y=5` after correcting the too-far-right and too-far-left attempts.
+- Native AppKit traffic-light buttons are present, visible, and enabled according to the protected `window-controls` diagnostic. Current accepted placement is governed by `MusicWindowMetrics` with native traffic-light padding `x=20`, `y=14`, and is guarded by the app-only corner screenshot audit.
 - The window now uses an opaque native space-black backing surface with no custom frame/content masks. This removes the transparent crescent that appeared when a custom rounded shell was layered inside the real NSWindow.
 - The sidebar remains the rounded inner pane: 28-point radius after the 10-point sidebar inset. The bridge contract now fails if custom transparent masks return, if the backing stops being opaque space-black, or if the traffic lights drift out of range.
 - Added `script/audit_window_corners.py`, a Music-window-only screenshot audit that saves `screenshots/window-corner-audit.png` plus a top-left crop and fails if the native corner crop falls outside the accepted range.
@@ -130,7 +131,7 @@ YouTube import helper:
 
 ## Last Verification Pass
 
-Last checked: `2026-06-17 01:36 CST`
+Last checked: `2026-06-17 02:13 CST`
 
 Commands run:
 
@@ -139,6 +140,7 @@ Commands run:
 bash -n script/jarvis-music-control
 ./script/jarvis-music-control capabilities
 ./script/jarvis-music-control library-sync
+./script/jarvis-music-control window-controls
 # targeted app-window screenshot: screenshots/sf-pro-window-controls-pass-2.png
 # targeted app-window screenshot: screenshots/logo-fallback-artwork-pass.png
 ./script/smoke_bridge.sh
@@ -191,7 +193,7 @@ lsof -nP -iTCP:47879 -sTCP:LISTEN
 ./script/jarvis-music-control volume
 ```
 
-Result: build succeeded, targeted app-window inspection showed the native-first YouTube Import screen with browser hidden by default, native candidate search on the left, rename/import/progress controls visible on the right, and clean non-stale status text. Native traffic-light diagnostics report close/minimize/zoom buttons visible and enabled. Window-shape diagnostics now report an opaque native space-black backing with custom transparent frame/content masks disabled, traffic lights at `x=24/47/70, y=5`, and a 28-point rounded inner sidebar. The current live `/status` check reports 50 songs, selected `All Songs`, and idle YouTube import status. Fallback artwork uses the correct Music logo, playlist controls passed create/select/read/rename/delete checks, playback controls passed state/seek/shuffle/repeat checks, stop clears the queue snapshot to `Idle`, source URL metadata recovery passed against the smoke-test MP3 without relying on app database state, process-timeout diagnostics stopped a slow helper after about one second and cleaned temp output, YouTube helper error classification passed, YouTube search returned structured candidates with thumbnail URLs, invalid YouTube import returns typed code `not_youtube_video_url` and leaves song count unchanged, yt-dlp import planning verifies audio-only selection via `--format bestaudio[acodec!=none]/bestaudio` with `videoCodec: none`, `audioOnly: true`, and `sharedLibraryUnchanged: true`, real import progress streamed through the app/bridge during the progress probe, full bridge smoke tests and contract tests passed, playback ended stopped with idle queue/time, and app volume was restored.
+Result: build succeeded, targeted app-window inspection showed the native-first YouTube Import screen with browser hidden by default, native candidate search on the left, rename/import/progress controls visible on the right, and clean non-stale status text. Native traffic-light diagnostics report close/minimize/zoom buttons visible and enabled. Window-shape diagnostics now report an opaque native space-black backing with custom transparent frame/content masks disabled, native system-rounded outer chrome, and the accepted `MusicWindowMetrics` sidebar/traffic-light geometry. The current live `/status` check reports 50 songs, selected `All Songs`, and idle YouTube import status. Fallback artwork uses the correct Music logo, playlist controls passed create/select/read/rename/delete checks, playback controls passed state/seek/shuffle/repeat checks, stop clears the queue snapshot to `Idle`, source URL metadata recovery passed against the smoke-test MP3 without relying on app database state, process-timeout diagnostics stopped a slow helper after about one second and cleaned temp output, YouTube helper error classification passed, YouTube search returned structured candidates with thumbnail URLs, invalid YouTube import returns typed code `not_youtube_video_url` and leaves song count unchanged, yt-dlp import planning verifies audio-only selection via `--format bestaudio[acodec!=none]/bestaudio` with `videoCodec: none`, `audioOnly: true`, and `sharedLibraryUnchanged: true`, real import progress streamed through the app/bridge during the progress probe, full bridge smoke tests and contract tests passed, playback ended stopped with idle queue/time, and app volume was restored.
 
 ## What I Will Do Next
 
