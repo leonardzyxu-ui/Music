@@ -84,9 +84,13 @@ struct SidebarView: View {
 
                     Button(action: onNewPlaylist) {
                         Label("New Playlist", systemImage: "plus")
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .font(MusicTypography.sidebarItem)
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .contentShape(Rectangle())
                 }
 
                 Section("Import") {
