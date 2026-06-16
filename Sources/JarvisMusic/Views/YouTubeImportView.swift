@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import AppKit
 
 struct YouTubeImportView: View {
     @ObservedObject var model: AppModel
@@ -242,7 +243,7 @@ struct YouTubeImportView: View {
             choose(result)
         } label: {
             HStack(spacing: 11) {
-                YouTubeThumbnail(urlString: thumbnailURL(for: result), size: 58)
+                YouTubeThumbnail(urlStrings: thumbnailURLs(for: result), size: 58)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(result.title)
@@ -285,7 +286,7 @@ struct YouTubeImportView: View {
         YouTubeGlassPanel {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .top, spacing: 15) {
-                    YouTubeThumbnail(urlString: thumbnailURL(for: selectedPreview), size: 96)
+                    YouTubeThumbnail(urlStrings: thumbnailURLs(for: selectedPreview), size: 96)
 
                     VStack(alignment: .leading, spacing: 7) {
                         Text(selectedPreview?.title ?? "Choose a video")
@@ -733,9 +734,11 @@ struct YouTubeImportView: View {
         }
     }
 
-    private func thumbnailURL(for preview: ImportPreview?) -> String? {
-        guard let preview else { return nil }
-        return preview.thumbnailURL ?? YouTubeImportService.inferredThumbnailURL(fromVideoURL: preview.url)
+    private func thumbnailURLs(for preview: ImportPreview?) -> [String] {
+        guard let preview else { return [] }
+        return [preview.thumbnailURL, YouTubeImportService.inferredThumbnailURL(fromVideoURL: preview.url)]
+            .compactMap { $0 }
+            .uniqued()
     }
 }
 
@@ -782,29 +785,21 @@ private struct YouTubeGlassPanel<Content: View>: View {
 }
 
 private struct YouTubeThumbnail: View {
-    var urlString: String?
+    var urlStrings: [String]
     var size: CGFloat
+    @StateObject private var loader = YouTubeThumbnailLoader()
 
     var body: some View {
         Group {
-            if let urlString, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .failure:
-                        placeholder
-                    case .empty:
-                        ZStack {
-                            placeholder
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                    @unknown default:
-                        placeholder
-                    }
+            if let image = loader.image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else if loader.isLoading {
+                ZStack {
+                    placeholder
+                    ProgressView()
+                        .controlSize(.small)
                 }
             } else {
                 placeholder
@@ -815,6 +810,9 @@ private struct YouTubeThumbnail: View {
         .overlay {
             RoundedRectangle(cornerRadius: max(10, size * 0.18), style: .continuous)
                 .stroke(.white.opacity(0.10), lineWidth: 1)
+        }
+        .task(id: urlStrings.joined(separator: "|")) {
+            await loader.load(urlStrings)
         }
     }
 
@@ -833,6 +831,95 @@ private struct YouTubeThumbnail: View {
                 .font(MusicTypography.fixed(size * 0.38, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.82))
         }
+    }
+}
+
+@MainActor
+private final class YouTubeThumbnailLoader: ObservableObject {
+    @Published var image: NSImage?
+    @Published var isLoading = false
+
+    private static let cache = NSCache<NSString, NSImage>()
+
+    func load(_ urlStrings: [String]) async {
+        let candidates = expandedCandidates(from: urlStrings)
+        guard !candidates.isEmpty else {
+            image = nil
+            isLoading = false
+            return
+        }
+
+        let cacheKey = candidates.joined(separator: "|") as NSString
+        if let cached = Self.cache.object(forKey: cacheKey) {
+            image = cached
+            isLoading = false
+            return
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        for candidate in candidates {
+            guard let url = URL(string: candidate) else { continue }
+            if let loaded = await Self.fetchImage(from: url) {
+                Self.cache.setObject(loaded, forKey: cacheKey)
+                image = loaded
+                return
+            }
+        }
+
+        image = nil
+    }
+
+    private func expandedCandidates(from urlStrings: [String]) -> [String] {
+        var candidates = urlStrings
+        for value in urlStrings {
+            guard let id = Self.youtubeID(fromThumbnailURL: value) else { continue }
+            candidates.append("https://i.ytimg.com/vi/\(id)/hqdefault.jpg")
+            candidates.append("https://i.ytimg.com/vi/\(id)/mqdefault.jpg")
+            candidates.append("https://i.ytimg.com/vi/\(id)/default.jpg")
+        }
+        return candidates.uniqued()
+    }
+
+    private static func youtubeID(fromThumbnailURL value: String) -> String? {
+        guard let url = URL(string: value) else { return nil }
+        let parts = url.pathComponents
+        guard let viIndex = parts.firstIndex(of: "vi") else { return nil }
+        let idIndex = parts.index(after: viIndex)
+        guard parts.indices.contains(idIndex), !parts[idIndex].isEmpty else { return nil }
+        return parts[idIndex]
+    }
+
+    private static func fetchImage(from url: URL) async -> NSImage? {
+        for configuration in [URLSessionConfiguration.ephemeral, localProxyConfiguration()] {
+            guard let data = try? await URLSession(configuration: configuration).data(from: url).0,
+                  let image = NSImage(data: data) else {
+                continue
+            }
+            return image
+        }
+        return nil
+    }
+
+    private static func localProxyConfiguration() -> URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.connectionProxyDictionary = [
+            kCFNetworkProxiesHTTPEnable as String: true,
+            kCFNetworkProxiesHTTPProxy as String: "127.0.0.1",
+            kCFNetworkProxiesHTTPPort as String: 7890,
+            kCFNetworkProxiesHTTPSEnable as String: true,
+            kCFNetworkProxiesHTTPSProxy as String: "127.0.0.1",
+            kCFNetworkProxiesHTTPSPort as String: 7890
+        ]
+        return configuration
+    }
+}
+
+private extension Array where Element == String {
+    func uniqued() -> [String] {
+        var seen = Set<String>()
+        return filter { seen.insert($0).inserted }
     }
 }
 
