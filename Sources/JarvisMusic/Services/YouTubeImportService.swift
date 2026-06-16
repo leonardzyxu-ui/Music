@@ -169,10 +169,18 @@ final class YouTubeImportService {
         var title: String?
         var url: String?
         var thumbnail: String?
+        var thumbnails: [YTDLPThumbnail]?
         var channel: String?
         var uploader: String?
         var duration: Double?
         var webpage_url: String?
+    }
+
+    private struct YTDLPThumbnail: Decodable {
+        var url: String?
+        var width: Int?
+        var height: Int?
+        var preference: Int?
     }
 
     private struct YTDLPSearchResult: Decodable {
@@ -185,6 +193,11 @@ final class YouTubeImportService {
     static func isSupportedImportURL(_ value: String) -> Bool {
         guard let url = URL(string: value) else { return false }
         return isLikelyVideoURL(url)
+    }
+
+    static func inferredThumbnailURL(fromVideoURL value: String?) -> String? {
+        guard let id = youtubeVideoID(from: value) else { return nil }
+        return "https://i.ytimg.com/vi/\(id)/hqdefault.jpg"
     }
 
     func fetchMetadata(url: URL) async throws -> ImportPreview {
@@ -212,7 +225,7 @@ final class YouTubeImportService {
         return ImportPreview(
             url: info.webpage_url ?? url.absoluteString,
             title: info.title ?? "Imported YouTube Audio",
-            thumbnailURL: info.thumbnail,
+            thumbnailURL: resolvedThumbnailURL(info),
             uploader: info.uploader,
             duration: info.duration
         )
@@ -248,7 +261,7 @@ final class YouTubeImportService {
             return ImportPreview(
                 url: resolvedURL,
                 title: info.title ?? "YouTube Video",
-                thumbnailURL: info.thumbnail,
+                thumbnailURL: resolvedThumbnailURL(info),
                 uploader: info.uploader ?? info.channel,
                 duration: info.duration
             )
@@ -378,6 +391,58 @@ final class YouTubeImportService {
         return nil
     }
 
+    private func resolvedThumbnailURL(_ info: YTDLPInfo) -> String? {
+        if let thumbnail = info.thumbnail, thumbnail.hasHTTPPrefix {
+            return thumbnail
+        }
+
+        if let best = info.thumbnails?
+            .compactMap({ thumbnail -> (url: String, score: Int)? in
+                guard let url = thumbnail.url, url.hasHTTPPrefix else { return nil }
+                let area = max(thumbnail.width ?? 0, 0) * max(thumbnail.height ?? 0, 0)
+                let preference = thumbnail.preference ?? 0
+                return (url, preference * 1_000_000 + area)
+            })
+            .max(by: { $0.score < $1.score }) {
+            return best.url
+        }
+
+        if let id = info.id, !id.isEmpty {
+            return Self.inferredThumbnailURL(fromVideoURL: "https://www.youtube.com/watch?v=\(id)")
+        }
+
+        return Self.inferredThumbnailURL(fromVideoURL: resolvedVideoURL(info))
+    }
+
+    private static func youtubeVideoID(from value: String?) -> String? {
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        guard let url = URL(string: value) else {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.count == 11 ? trimmed : nil
+        }
+
+        let host = url.host()?.lowercased() ?? ""
+        if host == "youtu.be" {
+            return url.pathComponents.dropFirst().first
+        }
+
+        if host.contains("youtube.com") {
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let id = components.queryItems?.first(where: { $0.name == "v" })?.value,
+               !id.isEmpty {
+                return id
+            }
+
+            let parts = url.pathComponents
+            if let index = parts.firstIndex(where: { ["shorts", "embed", "live"].contains($0) }),
+               parts.indices.contains(parts.index(after: index)) {
+                return parts[parts.index(after: index)]
+            }
+        }
+
+        return nil
+    }
+
     private func helperError(_ result: ProcessResult) -> YouTubeImportError {
         let message = [result.stderr, result.stdout]
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -452,6 +517,10 @@ private final class YouTubeDownloadProgressReporter: @unchecked Sendable {
 }
 
 private extension String {
+    var hasHTTPPrefix: Bool {
+        hasPrefix("http://") || hasPrefix("https://")
+    }
+
     func containsAny(_ needles: [String]) -> Bool {
         needles.contains { contains($0) }
     }

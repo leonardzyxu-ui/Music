@@ -13,11 +13,13 @@ struct SongListView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let showGroup = proxy.size.width > 620
-            let showDuration = proxy.size.width > 520
+            let compact = proxy.size.width < 760
+            let showGroup = proxy.size.width > 760
+            let showDuration = proxy.size.width > 620
             VStack(spacing: 0) {
-                header(compact: proxy.size.width < 620)
+                header(compact: compact)
                 Divider()
+                    .opacity(0.72)
                 if library.visibleSongs().isEmpty {
                     ContentUnavailableView(
                         library.searchQuery.isEmpty ? "No Songs" : "No Results",
@@ -26,7 +28,7 @@ struct SongListView: View {
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List(library.visibleSongs()) { song in
+                    List(library.visibleSongs(), selection: $library.selectedSongIDs) { song in
                         SongRow(
                             song: song,
                             isCurrent: playback.currentSong?.id == song.id,
@@ -35,6 +37,7 @@ struct SongListView: View {
                             showGroup: showGroup,
                             showDuration: showDuration,
                             play: {
+                                library.selectedSongIDs = [song.id]
                                 playback.play(song: song, queue: library.visibleSongs(), source: library.selection?.title ?? "Library", manual: true)
                             },
                             moveToGroup: { group in
@@ -49,26 +52,30 @@ struct SongListView: View {
                                 model.openOriginalVideo(for: song)
                             }
                         )
-                        .listRowInsets(EdgeInsets(top: 5, leading: proxy.size.width < 620 ? 14 : 22, bottom: 5, trailing: proxy.size.width < 620 ? 12 : 22))
-                        .listRowBackground(MusicPalette.spaceBlack)
+                        .listRowInsets(EdgeInsets(top: 5, leading: compact ? 14 : 22, bottom: 5, trailing: compact ? 12 : 22))
+                        .listRowBackground(MusicPalette.contentBlack)
+                        .tag(song.id)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: 90)
+                    }
                 }
             }
-            .background(MusicPalette.spaceBlack)
-            .padding(.top, 46)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(MusicPalette.contentBlack)
         }
     }
 
     private func header(compact: Bool) -> some View {
-        HStack(alignment: .bottom, spacing: 20) {
+        HStack(alignment: .center, spacing: 18) {
             if let heroSong, !compact {
-                ArtworkView(song: heroSong, size: 112)
+                ArtworkView(song: heroSong, size: 92)
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text(library.selection?.title ?? "All Songs")
-                    .font(MusicTypography.display(compact ? 30 : 38))
+                    .font(MusicTypography.display(compact ? 30 : 42))
                 HStack(spacing: 10) {
                     Text("\(library.visibleSongs().count) songs")
                     if library.selection == .smartPicker {
@@ -104,8 +111,9 @@ struct SongListView: View {
                 .disabled(library.visibleSongs().isEmpty)
             }
         }
-        .padding(.horizontal, compact ? 20 : 28)
-        .padding(.vertical, compact ? 18 : 24)
+        .padding(.horizontal, compact ? 20 : 30)
+        .padding(.top, compact ? 20 : 26)
+        .padding(.bottom, compact ? 16 : 20)
     }
 
     private func playVisible() {

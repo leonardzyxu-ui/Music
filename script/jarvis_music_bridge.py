@@ -23,6 +23,19 @@ DEFAULT_BASE_URL = "http://127.0.0.1:47879"
 DEFAULT_TOKEN_FILE = "~/Library/Application Support/Music/control-token.txt"
 
 
+def _install_local_proxy_bypass() -> None:
+    existing = os.environ.get("no_proxy") or os.environ.get("NO_PROXY") or ""
+    entries = [item.strip() for item in existing.split(",") if item.strip()]
+    required = ["127.0.0.1", "localhost", "::1"]
+    merged = entries + [item for item in required if item not in entries]
+    value = ",".join(merged)
+    os.environ["no_proxy"] = value
+    os.environ["NO_PROXY"] = value
+
+
+_install_local_proxy_bypass()
+
+
 class MusicBridgeError(RuntimeError):
     def __init__(self, message: str, *, status: int | None = None, code: str = "bridge_error") -> None:
         super().__init__(message)

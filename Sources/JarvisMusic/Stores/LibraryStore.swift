@@ -10,6 +10,7 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var explicitGroups: [String] = []
     @Published private(set) var lastSmartPickerRefreshAt: Date?
     @Published var selection: LibrarySelection? = .allSongs
+    @Published var selectedSongIDs: Set<String> = []
     @Published var searchQuery = ""
     @Published var isScanning = false
     @Published var lastScanSummary = "Ready"
@@ -39,6 +40,10 @@ final class LibraryStore: ObservableObject {
         let ranked = smartRankingSongIDs.compactMap { byID[$0] }
         let used = Set(ranked.map(\.id))
         return Array((ranked + songs.filter { !used.contains($0.id) }).prefix(min(20, songs.count)))
+    }
+
+    var selectedSongs: [Song] {
+        songs.filter { selectedSongIDs.contains($0.id) }
     }
 
     func load() async {
@@ -354,6 +359,18 @@ final class LibraryStore: ObservableObject {
         songs = database.songs
         explicitGroups = database.explicitGroups
         saveDatabase()
+    }
+
+    func moveSongsToTrash(_ songsToTrash: [Song]) async throws {
+        let uniqueSongs = Array(Dictionary(uniqueKeysWithValues: songsToTrash.map { ($0.id, $0) }).values)
+        guard !uniqueSongs.isEmpty else { return }
+
+        for song in uniqueSongs {
+            try FileManager.default.trashItem(at: song.fileURL, resultingItemURL: nil)
+        }
+
+        selectedSongIDs.subtract(uniqueSongs.map(\.id))
+        await scanLibrary(silent: true)
     }
 
     func upsertImportedSong(from fileURL: URL, title: String?, sourceURL: URL?) async -> Song {

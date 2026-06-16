@@ -32,7 +32,7 @@ enum MusicWindowControls {
             "nativeButtons": nativeButtonPayload(),
             "windowShape": windowShapePayload(),
             "events": recentEvents(limit: 12),
-            "mode": "native AppKit standardWindowButton controls with titled hidden-titlebar window chrome"
+            "mode": "native AppKit standardWindowButton controls with unified full-size-content window chrome"
         ]
     }
 
@@ -44,11 +44,11 @@ enum MusicWindowControls {
         let contentLayer = window.contentView?.layer
         return [
             "available": true,
-            "outerCornerMode": "nativeOpaqueSystemWindow",
-            "expectedOuterCornerRadius": MusicWindowMetrics.outerCornerRadius,
-            "expectedSidebarCornerRadius": MusicWindowMetrics.sidebarCornerRadius,
-            "expectedTrafficLightX": MusicWindowMetrics.trafficLightX,
-            "expectedTrafficLightY": MusicWindowMetrics.trafficLightY,
+            "outerCornerMode": "nativeSystemRounded",
+            "titlebarAppearsTransparent": window.titlebarAppearsTransparent,
+            "titleHidden": window.titleVisibility == .hidden,
+            "toolbarStyle": String(describing: window.toolbarStyle),
+            "usesFullSizeContentView": window.styleMask.contains(.fullSizeContentView),
             "frameCornerRadius": frameLayer?.cornerRadius ?? 0,
             "frameMasksToBounds": frameLayer?.masksToBounds ?? false,
             "contentCornerRadius": contentLayer?.cornerRadius ?? 0,

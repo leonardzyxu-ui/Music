@@ -31,7 +31,7 @@ struct YouTubeImportView: View {
             let compact = proxy.size.width < 760
             VStack(spacing: 0) {
                 importHeader(compact: compact)
-                    .padding(.top, 58)
+                    .padding(.top, 22)
                     .padding(.horizontal, compact ? 22 : 28)
                     .padding(.bottom, 18)
 
@@ -62,7 +62,7 @@ struct YouTubeImportView: View {
                     }
                     .padding(.horizontal, compact ? 22 : 28)
                     .padding(.vertical, 22)
-                    .padding(.bottom, 112)
+                    .padding(.bottom, 96)
                 }
             }
             .background(MusicPalette.contentBlack)
@@ -242,7 +242,7 @@ struct YouTubeImportView: View {
             choose(result)
         } label: {
             HStack(spacing: 11) {
-                YouTubeThumbnail(urlString: result.thumbnailURL, size: 58)
+                YouTubeThumbnail(urlString: thumbnailURL(for: result), size: 58)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(result.title)
@@ -285,7 +285,7 @@ struct YouTubeImportView: View {
         YouTubeGlassPanel {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .top, spacing: 15) {
-                    YouTubeThumbnail(urlString: selectedPreview?.thumbnailURL, size: 96)
+                    YouTubeThumbnail(urlString: thumbnailURL(for: selectedPreview), size: 96)
 
                     VStack(alignment: .leading, spacing: 7) {
                         Text(selectedPreview?.title ?? "Choose a video")
@@ -731,6 +731,11 @@ struct YouTubeImportView: View {
         case .info:
             return .white.opacity(0.52)
         }
+    }
+
+    private func thumbnailURL(for preview: ImportPreview?) -> String? {
+        guard let preview else { return nil }
+        return preview.thumbnailURL ?? YouTubeImportService.inferredThumbnailURL(fromVideoURL: preview.url)
     }
 }
 

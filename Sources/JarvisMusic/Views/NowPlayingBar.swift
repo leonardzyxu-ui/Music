@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NowPlayingBar: View {
     @ObservedObject var playback: PlaybackStore
-    @State private var isHovering = false
+    @State private var isScrubberHovering = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -10,7 +10,7 @@ struct NowPlayingBar: View {
             let leadingInset = compact ? CGFloat(18) : CGFloat(34)
             let trailingInset = compact ? CGFloat(18) : CGFloat(50)
             let barWidth = max(0, proxy.size.width - leadingInset - trailingInset)
-            let expanded = isHovering && playback.duration > 0
+            let expanded = isScrubberHovering && playback.duration > 0
             let contentPadding = compact ? CGFloat(16) : CGFloat(18)
             let itemSpacing = compact ? CGFloat(14) : CGFloat(16)
             let leftWidth = compact ? CGFloat(132) : CGFloat(176)
@@ -59,9 +59,6 @@ struct NowPlayingBar: View {
                     .shadow(color: .black.opacity(0.22), radius: expanded ? 17 : 13, y: expanded ? 7 : 5)
                     .compositingGroup()
                     .animation(.snappy(duration: 0.18), value: expanded)
-                    .onHover { hovering in
-                        isHovering = hovering
-                    }
                 }
                 .padding(.leading, leadingInset)
                 .padding(.trailing, trailingInset)
@@ -154,12 +151,21 @@ struct NowPlayingBar: View {
                     }
                     .foregroundStyle(.primary)
                 }
+                .contentShape(Rectangle())
+                .onHover { hovering in
+                    isScrubberHovering = hovering
+                }
             } else {
                 VStack(spacing: 5) {
                     trackIdentity
                     compactProgressBar
                         .frame(height: 3)
                         .padding(.horizontal, playback.currentSong == nil ? 28 : 0)
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                        .onHover { hovering in
+                            isScrubberHovering = hovering
+                        }
                         .opacity(playback.duration > 0 ? 1 : 0.45)
                 }
             }
@@ -191,9 +197,9 @@ struct NowPlayingBar: View {
             let fraction = playback.duration > 0 ? min(max(playback.currentTime / playback.duration, 0), 1) : 0
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(.primary.opacity(0.12))
+                    .fill(Color.white.opacity(0.18))
                 Capsule()
-                    .fill(Color.primary.opacity(0.42))
+                    .fill(Color.white.opacity(0.92))
                     .frame(width: max(0, proxy.size.width * fraction))
             }
         }

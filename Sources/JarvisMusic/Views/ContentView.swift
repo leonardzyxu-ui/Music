@@ -1,74 +1,56 @@
-import AppKit
 import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject private var library: LibraryStore
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var isShowingNewPlaylistDialog = false
     @State private var newPlaylistName = ""
-    private let outerCornerRadius = MusicWindowMetrics.outerCornerRadius
-    private let sidebarInset = MusicWindowMetrics.sidebarInset
+
+    init(model: AppModel) {
+        self.model = model
+        self.library = model.library
+    }
 
     var body: some View {
         GeometryReader { proxy in
-            let compact = proxy.size.width < 900
-            let sidebarWidth = compact ? CGFloat(188) : CGFloat(228)
             ZStack {
-                ZStack(alignment: .topTrailing) {
-                    HStack(spacing: 0) {
-                        SidebarView(
-                            model: model,
-                            compact: compact,
-                            cornerRadius: MusicWindowMetrics.sidebarCornerRadius,
-                            onNewPlaylist: presentNewPlaylistDialog
-                        )
-                        .frame(width: sidebarWidth)
-                        .padding(.leading, sidebarInset)
-                        .padding(.top, sidebarInset)
-                        .padding(.bottom, sidebarInset)
-                        .padding(.trailing, 12)
-                        .ignoresSafeArea(.container, edges: [.top, .leading])
-
-                        ZStack(alignment: .bottom) {
-                            Group {
-                                if model.library.selection == .youtube {
-                                    YouTubeImportView(model: model)
-                                } else {
-                                    SongListView(model: model)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                            NowPlayingBar(playback: model.playback)
-                                .zIndex(20)
-                        }
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    SidebarView(
+                        model: model,
+                        onNewPlaylist: presentNewPlaylistDialog
+                    )
+                    .navigationSplitViewColumnWidth(min: 220, ideal: 236, max: 276)
+                } detail: {
+                    detailContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(MusicPalette.contentBlack)
-                    }
-
-                    WindowDragRegion()
-                        .frame(height: 68)
-                        .padding(.leading, 220)
-                        .padding(.trailing, dragRegionTrailingInset(totalWidth: proxy.size.width, sidebarWidth: sidebarWidth))
-                        .frame(maxWidth: .infinity)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .zIndex(10)
-
-                    if model.library.selection != .youtube {
-                        MusicSearchField(text: Binding(
-                            get: { model.library.searchQuery },
-                            set: { model.library.searchQuery = $0 }
-                        ))
-                        .frame(width: searchWidth(totalWidth: proxy.size.width, sidebarWidth: sidebarWidth))
-                        .padding(.top, 10)
-                        .padding(.trailing, 20)
-                        .zIndex(80)
-                    }
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            Color.clear.frame(height: 90)
+                        }
+                        .overlay(alignment: .bottom) {
+                            NowPlayingBar(playback: model.playback)
+                                .padding(.horizontal, 18)
+                        }
                 }
+                .navigationSplitViewStyle(.balanced)
+                .frame(minWidth: 900, minHeight: 620)
+                .background(MusicPalette.spaceBlack)
+                .modifier(
+                    LibrarySearchToolbar(
+                        text: Binding(
+                            get: { library.searchQuery },
+                            set: { library.searchQuery = $0 }
+                        ),
+                        isEnabled: library.selection != .youtube
+                    )
+                )
                 .blur(radius: isShowingNewPlaylistDialog ? 7 : 0)
-                .saturation(isShowingNewPlaylistDialog ? 0.85 : 1)
+                .saturation(isShowingNewPlaylistDialog ? 0.86 : 1)
                 .animation(.snappy(duration: 0.2), value: isShowingNewPlaylistDialog)
 
                 if isShowingNewPlaylistDialog {
-                    Color.black.opacity(0.28)
+                    Color.black.opacity(0.30)
                         .ignoresSafeArea()
                         .transition(.opacity)
                         .onTapGesture(perform: dismissNewPlaylistDialog)
@@ -78,16 +60,21 @@ struct ContentView: View {
                         create: createNewPlaylist,
                         cancel: dismissNewPlaylistDialog
                     )
-                    .frame(width: min(390, max(300, proxy.size.width - 96)))
+                    .frame(width: min(390, max(320, proxy.size.width - 96)))
                     .transition(.scale(scale: 0.96).combined(with: .opacity))
-                    .zIndex(200)
+                    .zIndex(20)
                 }
             }
-            .ignoresSafeArea(.container, edges: .all)
-            .background(MusicPalette.spaceBlack)
         }
-        .frame(minWidth: 760, minHeight: 560)
-        .background(MusicPalette.spaceBlack)
+    }
+
+    @ViewBuilder
+    private var detailContent: some View {
+        if library.selection == .youtube {
+            YouTubeImportView(model: model)
+        } else {
+            SongListView(model: model)
+        }
     }
 
     private func presentNewPlaylistDialog() {
@@ -107,18 +94,6 @@ struct ContentView: View {
         model.library.selection = .group(name)
         dismissNewPlaylistDialog()
     }
-
-    private func searchWidth(totalWidth: CGFloat, sidebarWidth: CGFloat) -> CGFloat {
-        let available = totalWidth - sidebarWidth - 94
-        return min(390, max(260, available))
-    }
-
-    private func dragRegionTrailingInset(totalWidth: CGFloat, sidebarWidth: CGFloat) -> CGFloat {
-        if model.library.selection == .youtube {
-            return 18
-        }
-        return searchWidth(totalWidth: totalWidth, sidebarWidth: sidebarWidth) + 44
-    }
 }
 
 private struct NewPlaylistGlassDialog: View {
@@ -129,11 +104,11 @@ private struct NewPlaylistGlassDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("New Playlist")
                     .font(MusicTypography.fixed(22, weight: .semibold))
                     .foregroundStyle(.primary)
-                Text("Name this playlist.")
+                Text("Create a playlist for your library.")
                     .font(MusicTypography.fixed(13, weight: .medium))
                     .foregroundStyle(.secondary)
             }
@@ -205,21 +180,24 @@ private struct NewPlaylistGlassDialog: View {
     }
 }
 
-private struct WindowDragRegion: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        DragView()
-    }
+private struct LibrarySearchToolbar: ViewModifier {
+    @Binding var text: String
+    let isEnabled: Bool
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
-
-    private final class DragView: NSView {
-        override func mouseDown(with event: NSEvent) {
-            window?.performDrag(with: event)
+    func body(content: Content) -> some View {
+        content.toolbar {
+            if isEnabled {
+                ToolbarItem(placement: .principal) {
+                    MusicToolbarSearchField(text: $text)
+                        .frame(width: 372)
+                        .offset(y: 3)
+                }
+            }
         }
     }
 }
 
-private struct MusicSearchField: View {
+private struct MusicToolbarSearchField: View {
     @Binding var text: String
 
     var body: some View {
@@ -227,10 +205,12 @@ private struct MusicSearchField: View {
             Image(systemName: "magnifyingglass")
                 .font(MusicTypography.fixed(15, weight: .semibold))
                 .foregroundStyle(.secondary)
+
             TextField("Search songs, artists, albums", text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(.callout, design: .default).weight(.medium))
                 .lineLimit(1)
+
             if !text.isEmpty {
                 Button {
                     text = ""

@@ -3,160 +3,124 @@ import SwiftUI
 struct SidebarView: View {
     @ObservedObject var model: AppModel
     @ObservedObject private var library: LibraryStore
-    var compact: Bool
-    var cornerRadius: CGFloat
     var onNewPlaylist: () -> Void
 
     init(
         model: AppModel,
-        compact: Bool = false,
-        cornerRadius: CGFloat = 22,
         onNewPlaylist: @escaping () -> Void = {}
     ) {
         self.model = model
         self.library = model.library
-        self.compact = compact
-        self.cornerRadius = cornerRadius
         self.onNewPlaylist = onNewPlaylist
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Music")
-                .font(MusicTypography.sidebarTitle)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 18)
-                .padding(.top, 86)
-                .padding(.bottom, 16)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    sidebarSection("Library") {
-                        sidebarButton(selection: .allSongs, icon: "music.note", title: "Songs", count: library.songs.count)
-                        sidebarButton(selection: .smartPicker, icon: "sparkles", title: "Your Pick", count: library.smartSongs.count)
-                    }
-
-                    sidebarSection("Playlists") {
-                        ForEach(library.groups, id: \.self) { group in
-                            sidebarButton(selection: .group(group), icon: "square.fill", title: group, count: library.songs.filter { $0.group == group }.count)
-                                .contextMenu {
-                                    Button("Rename") {
-                                        if let name = Prompt.text(title: "Rename Group", message: "Rename '\(group)' to:", defaultValue: group) {
-                                            library.renameGroup(group, to: name)
-                                        }
-                                    }
-                                    Button("Delete", role: .destructive) {
-                                        if Prompt.confirm(title: "Delete Group", message: "Move songs in '\(group)' back to All Songs?") {
-                                            library.deleteGroup(group)
-                                        }
-                                    }
-                                }
-                        }
-
-                        Button {
-                            onNewPlaylist()
-                        } label: {
-                            Label("New Playlist", systemImage: "plus")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.white.opacity(0.76))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                    }
-
-                    sidebarSection("Import") {
-                        sidebarButton(selection: .youtube, icon: "square.and.arrow.down", title: "YouTube", count: nil)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 14)
-            }
-
-            Spacer(minLength: 22)
-        }
-        .background {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(MusicPalette.sidebarBlack)
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.014),
-                            Color.clear,
-                            Color.black.opacity(0.018)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.13),
-                            Color.white.opacity(0.045),
-                            Color.black.opacity(0.12)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
-    }
-
-    private func sidebarSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(spacing: 0) {
             HStack {
-                Text(title)
-                    .font(MusicTypography.sectionLabel)
-                    .foregroundStyle(.white.opacity(0.56))
-                    .textCase(.uppercase)
+                Text("Music")
+                    .font(MusicTypography.display(24))
                 Spacer()
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 8)
 
-            VStack(spacing: 3) {
-                content()
+            List(selection: selectionBinding) {
+                Section("Library") {
+                    SidebarSelectionRow(
+                        icon: "music.note",
+                        title: "Songs",
+                        count: "\(library.songs.count)",
+                        isSelected: library.selection == .allSongs
+                    )
+                    .tag(LibrarySelection.allSongs as LibrarySelection?)
+
+                    SidebarSelectionRow(
+                        icon: "sparkles",
+                        title: "Your Pick",
+                        count: "\(library.smartSongs.count)",
+                        isSelected: library.selection == .smartPicker
+                    )
+                    .tag(LibrarySelection.smartPicker as LibrarySelection?)
+                }
+
+                Section("Playlists") {
+                    ForEach(library.groups, id: \.self) { group in
+                        SidebarSelectionRow(
+                            icon: "square.fill",
+                            title: group,
+                            count: "\(library.songs.filter { $0.group == group }.count)",
+                            isSelected: library.selection == .group(group)
+                        )
+                        .tag(LibrarySelection.group(group) as LibrarySelection?)
+                        .contextMenu {
+                            Button("Rename") {
+                                if let name = Prompt.text(title: "Rename Group", message: "Rename '\(group)' to:", defaultValue: group) {
+                                    library.renameGroup(group, to: name)
+                                }
+                            }
+                            Button("Delete", role: .destructive) {
+                                if Prompt.confirm(title: "Delete Group", message: "Move songs in '\(group)' back to All Songs?") {
+                                    library.deleteGroup(group)
+                                }
+                            }
+                        }
+                    }
+
+                    Button(action: onNewPlaylist) {
+                        Label("New Playlist", systemImage: "plus")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Section("Import") {
+                    SidebarSelectionRow(
+                        icon: "square.and.arrow.down",
+                        title: "YouTube",
+                        count: nil,
+                        isSelected: library.selection == .youtube
+                    )
+                    .tag(LibrarySelection.youtube as LibrarySelection?)
+                }
             }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
         }
     }
 
-    private func sidebarButton(selection: LibrarySelection, icon: String, title: String, count: Int?) -> some View {
-        let isSelected = library.selection == selection
-        return Button {
-            library.selection = selection
-        } label: {
-            HStack(spacing: 9) {
-                Image(systemName: icon)
-                    .frame(width: 18)
-                Text(title)
-                    .lineLimit(1)
-                Spacer()
-                if let count {
-                    Text("\(count)")
-                        .foregroundStyle(isSelected ? Color.red : Color.white.opacity(0.64))
-                        .font(.system(.caption, design: .default))
-                        .opacity(compact ? 0 : 1)
-                }
+    private var selectionBinding: Binding<LibrarySelection?> {
+        Binding(
+            get: { library.selection },
+            set: { newValue in
+                guard let newValue else { return }
+                library.selection = newValue
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.075))
-                }
+        )
+    }
+}
+
+private struct SidebarSelectionRow: View {
+    let icon: String
+    let title: String
+    let count: String?
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .frame(width: 16)
+            Text(title)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            if let count {
+                Text(count)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(isSelected ? Color.red : .secondary)
             }
-            .foregroundStyle(isSelected ? Color.red : Color.white.opacity(0.86))
         }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .font(MusicTypography.sidebarItem)
+        .foregroundStyle(isSelected ? Color.red : .primary)
         .contentShape(Rectangle())
     }
 }

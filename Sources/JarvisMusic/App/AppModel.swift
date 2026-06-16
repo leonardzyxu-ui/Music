@@ -197,6 +197,34 @@ final class AppModel: ObservableObject {
         importActivityLog.removeAll()
     }
 
+    func moveSelectedSongsToTrash() async {
+        let songs = library.selectedSongs
+        guard !songs.isEmpty else { return }
+
+        let title = songs.count == 1 ? "Move Song to Recycle Bin" : "Move Songs to Recycle Bin"
+        let detail: String
+        if songs.count == 1, let song = songs.first {
+            detail = "Move '\(song.title)' to the Recycle Bin?"
+        } else {
+            detail = "Move \(songs.count) selected songs to the Recycle Bin?"
+        }
+
+        guard Prompt.confirm(title: title, message: detail) else { return }
+
+        if let currentSong = playback.currentSong, songs.contains(where: { $0.id == currentSong.id }) {
+            playback.stop()
+        }
+
+        do {
+            try await library.moveSongsToTrash(songs)
+        } catch {
+            Prompt.error(
+                title: "Couldn’t Move to Recycle Bin",
+                message: error.localizedDescription
+            )
+        }
+    }
+
     private func removeCompletedActiveImportRows(stage: YouTubeImportStage?, title: String) {
         let lowerTitle = title.lowercased()
         importActivityLog.removeAll { entry in

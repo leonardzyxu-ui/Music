@@ -25,11 +25,20 @@ done
 
 cd "$ROOT"
 
-if pgrep -x "$PRODUCT" >/dev/null 2>&1 || pgrep -x "$LEGACY_PRODUCT" >/dev/null 2>&1; then
-  pkill -x "$PRODUCT" || true
-  pkill -x "$LEGACY_PRODUCT" || true
-  sleep 0.4
-fi
+quit_running_app() {
+  osascript -e 'tell application id "com.leoxu.Music" to quit' >/dev/null 2>&1 || true
+  for _ in {1..20}; do
+    if ! pgrep -x "$PRODUCT" >/dev/null 2>&1 && ! pgrep -x "$LEGACY_PRODUCT" >/dev/null 2>&1; then
+      return
+    fi
+    sleep 0.2
+  done
+  pkill -x "$PRODUCT" >/dev/null 2>&1 || true
+  pkill -x "$LEGACY_PRODUCT" >/dev/null 2>&1 || true
+  sleep 0.6
+}
+
+quit_running_app
 
 swift build -c "$CONFIG"
 BUILD_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
@@ -87,7 +96,7 @@ if [[ "$DEBUG" == "1" ]]; then
   exit $?
 fi
 
-/usr/bin/open -n "$APP"
+/usr/bin/open "$APP"
 
 if [[ "$VERIFY" == "1" ]]; then
   for _ in {1..30}; do

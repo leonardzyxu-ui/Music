@@ -166,19 +166,14 @@ def assert_window_controls(payload: dict[str, Any]) -> None:
     shape = payload.get("windowShape")
     if not isinstance(shape, dict) or shape.get("available") is not True:
         raise AssertionError(f"window shape diagnostics missing: {payload}")
-    expected_radius = float(shape.get("expectedOuterCornerRadius", 0))
-    if shape.get("outerCornerMode") != "nativeOpaqueSystemWindow":
-        raise AssertionError(f"outer window corner should use the native opaque system window: {payload}")
-    if expected_radius != 0:
-        raise AssertionError(f"custom outer corner radius should be disabled: {payload}")
-    if shape.get("frameMasksToBounds") is not False or shape.get("contentMasksToBounds") is not False:
-        raise AssertionError(f"custom transparent masks should be disabled: {payload}")
+    if shape.get("outerCornerMode") != "nativeSystemRounded":
+        raise AssertionError(f"window should report native system-rounded chrome: {payload}")
+    if shape.get("titlebarAppearsTransparent") is not True or shape.get("titleHidden") is not True:
+        raise AssertionError(f"window titlebar should use the unified transparent hidden-title style: {payload}")
+    if shape.get("usesFullSizeContentView") is not True:
+        raise AssertionError(f"window should use a full-size content view: {payload}")
     if shape.get("isOpaque") is not True or shape.get("backgroundIsSpaceBlack") is not True:
-        raise AssertionError(f"window must have an opaque space-black backing surface: {payload}")
-    expected_x = float(shape.get("expectedTrafficLightX", -1))
-    expected_y = float(shape.get("expectedTrafficLightY", -1))
-    if expected_x < 22 or expected_x > 28 or expected_y < 4:
-        raise AssertionError(f"traffic lights are not anchored inside the filled sidebar surface: {payload}")
+        raise AssertionError(f"window should use a solid space-black opaque outer surface: {payload}")
     if not isinstance(payload.get("events"), list):
         raise AssertionError(f"window control events should be a list: {payload}")
 

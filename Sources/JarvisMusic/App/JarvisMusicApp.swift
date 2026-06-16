@@ -13,8 +13,8 @@ struct JarvisMusicApp: App {
                     await model.start()
                 }
         }
-        .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 940, height: 700)
+        .defaultSize(width: 1180, height: 760)
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(after: .windowArrangement) {
                 Button("Close Window") {
@@ -43,6 +43,15 @@ struct JarvisMusicApp: App {
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
             }
+
+            CommandMenu("Song") {
+                Button("Move to Recycle Bin") {
+                    Task {
+                        await model.moveSelectedSongsToTrash()
+                    }
+                }
+                .disabled(model.library.selectedSongs.isEmpty)
+            }
         }
 
         Settings {
@@ -64,6 +73,8 @@ enum MusicWindowActions {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let minimumWindowSize = NSSize(width: 900, height: 620)
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -84,7 +95,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fitVisibleWindows() {
         for window in NSApp.windows where window.isVisible || window.title == AppConfiguration.appName {
-            window.minSize = NSSize(width: 760, height: 560)
+            window.minSize = minimumWindowSize
+            window.isOpaque = true
+            window.backgroundColor = MusicPalette.nsSpaceBlack
+            window.hasShadow = true
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.styleMask.insert(.titled)
@@ -94,78 +108,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if #available(macOS 11.0, *) {
                 window.titlebarSeparatorStyle = .none
             }
-            window.isMovableByWindowBackground = false
-            configureNativeWindowButtons(for: window)
-            applyNativeWindowSurface(to: window)
             guard let screen = window.screen ?? NSScreen.main else { continue }
             let visible = screen.visibleFrame.insetBy(dx: 18, dy: 18)
             var frame = window.frame
             let shouldAdjust = frame.width > visible.width
                 || frame.height > visible.height
-                || frame.width < window.minSize.width
-                || frame.height < window.minSize.height
+                || frame.width < minimumWindowSize.width
+                || frame.height < minimumWindowSize.height
                 || frame.minX < visible.minX
                 || frame.maxX > visible.maxX
                 || frame.minY < visible.minY
                 || frame.maxY > visible.maxY
 
             if shouldAdjust {
-                frame.size.width = min(max(900, min(frame.width, 980)), visible.width)
-                frame.size.height = min(max(640, min(frame.height, 740)), visible.height)
+                frame.size.width = min(max(frame.width, minimumWindowSize.width), visible.width)
+                frame.size.height = min(max(frame.height, minimumWindowSize.height), visible.height)
                 frame.origin.x = visible.midX - frame.width / 2
                 frame.origin.y = visible.midY - frame.height / 2
                 window.makeKeyAndOrderFront(nil)
                 window.setFrame(frame, display: true, animate: false)
                 window.orderFrontRegardless()
             }
-        }
-    }
-
-    private func applyNativeWindowSurface(to window: NSWindow) {
-        window.isOpaque = true
-        window.backgroundColor = MusicPalette.nsSpaceBlack
-        window.hasShadow = true
-
-        if let frameView = window.contentView?.superview {
-            frameView.wantsLayer = true
-            frameView.layer?.cornerRadius = 0
-            frameView.layer?.masksToBounds = false
-            frameView.layer?.backgroundColor = MusicPalette.nsSpaceBlack.cgColor
-            removeFrameBackingView(from: frameView)
-        }
-
-        window.contentView?.wantsLayer = true
-        window.contentView?.layer?.cornerRadius = 0
-        window.contentView?.layer?.masksToBounds = false
-        window.contentView?.layer?.backgroundColor = MusicPalette.nsSpaceBlack.cgColor
-        window.invalidateShadow()
-    }
-
-    private func removeFrameBackingView(from frameView: NSView) {
-        let identifier = NSUserInterfaceItemIdentifier("MusicWindowFrameBacking")
-        frameView.subviews.first(where: { $0.identifier == identifier })?.removeFromSuperview()
-    }
-
-    private func configureNativeWindowButtons(for window: NSWindow) {
-        guard
-            let close = window.standardWindowButton(.closeButton),
-            let minimize = window.standardWindowButton(.miniaturizeButton),
-            let zoom = window.standardWindowButton(.zoomButton)
-        else { return }
-
-        for button in [close, minimize, zoom] {
-            button.isHidden = false
-            button.isEnabled = true
-            button.alphaValue = 1
-        }
-
-        for (index, button) in [close, minimize, zoom].enumerated() {
-            button.setFrameOrigin(
-                NSPoint(
-                    x: MusicWindowMetrics.trafficLightX + CGFloat(index) * 23,
-                    y: MusicWindowMetrics.trafficLightY
-                )
-            )
         }
     }
 }
