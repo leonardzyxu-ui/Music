@@ -37,7 +37,7 @@ Runnable app:
 
 ## Verification Run
 
-Last full pass so far: `2026-06-17 02:13 CST`
+Last full pass so far: `2026-06-17 06:53 CST`
 
 Commands verified:
 
@@ -66,6 +66,13 @@ Important verified outputs:
 - App volume was restored to about `0.9`.
 - App-only corner audit passed.
 
+Morning follow-up:
+
+- At `06:53 CST`, the app bridge was still healthy.
+- At `06:53 CST`, live `/status` still reported `50` songs, selection `All Songs`, and not playing.
+- At `06:53 CST`, `python3 script/test_bridge_contract.py` passed again.
+- At `06:53 CST`, `python3 script/audit_window_corners.py` passed again.
+
 ## Screenshot Evidence
 
 - Current app-window audit: `screenshots/window-corner-audit.png`
@@ -79,6 +86,7 @@ Important verified outputs:
 - I did not run a real new YouTube import overnight because it writes a new MP3 into the shared library. Instead, I verified the no-download audio-only plan and ran the non-destructive smoke tests.
 - Physical mouse clicking on the red/yellow/green window buttons still needs Leo’s live desktop confirmation, though bridge diagnostics show native enabled AppKit buttons and the smoke/contract tests pass.
 - Direct UI click automation for sidebar rows remains unreliable from tools, but the sidebar code uses full-width plain buttons and the app model switches immediately through bridge selection.
+- The scheduled 6:25 AM heartbeat did not produce the final 6:30 AM thread message or refresh this report automatically. The original draft stopped at `02:24 CST`, and this file had to be refreshed manually after Leo woke up.
 
 ## Next Actions
 
