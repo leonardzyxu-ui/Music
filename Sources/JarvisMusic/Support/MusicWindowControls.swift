@@ -44,7 +44,7 @@ enum MusicWindowControls {
         let contentLayer = window.contentView?.layer
         return [
             "available": true,
-            "outerCornerMode": "customModerateRoundedShell",
+            "outerCornerMode": "nativeOpaqueSystemWindow",
             "expectedOuterCornerRadius": MusicWindowMetrics.outerCornerRadius,
             "expectedSidebarCornerRadius": MusicWindowMetrics.sidebarCornerRadius,
             "expectedTrafficLightX": MusicWindowMetrics.trafficLightX,

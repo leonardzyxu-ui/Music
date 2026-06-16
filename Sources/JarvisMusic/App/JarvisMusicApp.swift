@@ -122,45 +122,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applyNativeWindowSurface(to window: NSWindow) {
-        window.isOpaque = false
-        window.backgroundColor = .clear
+        window.isOpaque = true
+        window.backgroundColor = MusicPalette.nsSpaceBlack
         window.hasShadow = true
 
         if let frameView = window.contentView?.superview {
             frameView.wantsLayer = true
-            frameView.layer?.cornerRadius = MusicWindowMetrics.outerCornerRadius
-            frameView.layer?.cornerCurve = .continuous
-            frameView.layer?.masksToBounds = true
+            frameView.layer?.cornerRadius = 0
+            frameView.layer?.masksToBounds = false
             frameView.layer?.backgroundColor = MusicPalette.nsSpaceBlack.cgColor
-            installFrameBackingView(in: frameView)
+            removeFrameBackingView(from: frameView)
         }
 
         window.contentView?.wantsLayer = true
-        window.contentView?.layer?.cornerRadius = MusicWindowMetrics.outerCornerRadius
-        window.contentView?.layer?.cornerCurve = .continuous
-        window.contentView?.layer?.masksToBounds = true
+        window.contentView?.layer?.cornerRadius = 0
+        window.contentView?.layer?.masksToBounds = false
         window.contentView?.layer?.backgroundColor = MusicPalette.nsSpaceBlack.cgColor
         window.invalidateShadow()
     }
 
-    private func installFrameBackingView(in frameView: NSView) {
+    private func removeFrameBackingView(from frameView: NSView) {
         let identifier = NSUserInterfaceItemIdentifier("MusicWindowFrameBacking")
-        let backingView: NSView
-        if let existing = frameView.subviews.first(where: { $0.identifier == identifier }) {
-            backingView = existing
-        } else {
-            backingView = NSView(frame: frameView.bounds)
-            backingView.identifier = identifier
-            backingView.autoresizingMask = [.width, .height]
-            frameView.addSubview(backingView, positioned: .below, relativeTo: frameView.subviews.first)
-        }
-
-        backingView.frame = frameView.bounds
-        backingView.wantsLayer = true
-        backingView.layer?.backgroundColor = MusicPalette.nsSpaceBlack.cgColor
-        backingView.layer?.cornerRadius = MusicWindowMetrics.outerCornerRadius
-        backingView.layer?.cornerCurve = .continuous
-        backingView.layer?.masksToBounds = true
+        frameView.subviews.first(where: { $0.identifier == identifier })?.removeFromSuperview()
     }
 
     private func configureNativeWindowButtons(for window: NSWindow) {

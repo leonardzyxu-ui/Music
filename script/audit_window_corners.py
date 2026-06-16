@@ -13,8 +13,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 SCREENSHOT = ROOT / "screenshots" / "window-corner-audit.png"
 CROP = ROOT / "screenshots" / "window-corner-audit-crop.png"
-MIN_RETINA_CORNER_PIXELS = 64
-MAX_RETINA_CORNER_PIXELS = 82
+MIN_RETINA_CORNER_PIXELS = 20
+MAX_RETINA_CORNER_PIXELS = 42
 
 
 def find_music_window_id() -> str:

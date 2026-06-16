@@ -5,10 +5,10 @@
 - Traffic-light buttons must not sit in a transparent titlebar strip.
 - Traffic-light buttons must not hug the top edge; compare their vertical offset to Apple Music before calling the window fixed.
 - Traffic-light buttons must not hug the left edge; they should sit comfortably inside the sidebar/top-left chrome area.
-- The whole app window needs a visibly round Apple Music-like outside corner, not a tight default-looking corner.
-- The outer window corner and inner sidebar corner must look concentric, with no competing rounded rectangle starting below the traffic lights.
-- Current required shell metrics: outer AppKit/content radius `38`, sidebar inset `10`, inner sidebar radius `28`, traffic lights at `x=34`, `y=5`.
-- `script/test_bridge_contract.py` must fail if the outer window radius drops below `34`, if frame/content masks are off, or if the window stops being clear/non-opaque outside the rounded shell.
+- The whole app window must use one opaque, native space-black surface. Do not reintroduce a transparent custom shell/crescent while chasing larger corner radius.
+- The sidebar remains the rounded inner pane, with no competing transparent rounded rectangle around the traffic lights.
+- Current required shell metrics: native opaque outer window, sidebar inset `10`, inner sidebar radius `28`, traffic lights at `x=24/47/70`, `y=5`.
+- `script/test_bridge_contract.py` must fail if custom frame/content masks return, if the window stops being opaque space-black, or if traffic lights move outside the accepted x range.
 - `python3 script/audit_window_corners.py` must pass and produce a Music-window-only top-left crop before calling corner work done.
 - The top titlebar area and app body must be one continuous Apple-style space-black surface, with no horizontal color band.
 - The sidebar footer/avatar is optional. Do not re-add a large personal `LX Leo Xu` badge unless it is deliberately redesigned.
