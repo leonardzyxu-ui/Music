@@ -79,7 +79,7 @@
 <body>
   <main>
     <section class="hero">
-      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 03:51 CST</p>
+      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 04:02 CST</p>
       <h1>Music Overnight Report</h1>
       <p>Native macOS Music app checkpoint for Leo. This report is a living morning handoff and will be finalized before 6:30 AM Beijing time.</p>
     </section>
@@ -127,6 +127,7 @@
           <li><span class="ok">Passed</span>: <code>git diff --check</code></li>
           <li><span class="ok">Repeated</span>: the same safe verification pass was rerun at 02:33 CST and stayed green except for the known screenshot capture limitation.</li>
           <li><span class="ok">Repeated</span>: build, bridge contract, and whitespace checks were rerun at 02:54 CST and stayed green.</li>
+          <li><span class="ok">Repeated</span>: targeted app-state inspection was retried at 04:00 CST against <code>com.leoxu.Music</code> and the exact <code>dist/Music.app</code> path; Computer Use still reports <code>cgWindowNotFound</code>.</li>
           <li><span class="ok">Added</span>: <code>POST /diagnostics/window-snapshot</code> now refuses to save a misleading image when offscreen material rendering does not match the live Music window.</li>
           <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
           <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
