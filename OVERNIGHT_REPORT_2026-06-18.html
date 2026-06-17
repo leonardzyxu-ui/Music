@@ -79,7 +79,7 @@
 <body>
   <main>
     <section class="hero">
-      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 04:10 CST</p>
+      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 04:21 CST</p>
       <h1>Music Overnight Report</h1>
       <p>Native macOS Music app checkpoint for Leo. This report is a living morning handoff and will be finalized before 6:30 AM Beijing time.</p>
     </section>
@@ -131,6 +131,7 @@
           <li><span class="ok">Repeated</span>: targeted app-state inspection was retried at 04:00 CST against <code>com.leoxu.Music</code> and the exact <code>dist/Music.app</code> path; Computer Use still reports <code>cgWindowNotFound</code>.</li>
           <li><span class="ok">Added</span>: window diagnostics now expose <code>windowNumber</code> and <code>sharingType</code>; the live Music window reports <code>sharingTypeRawValue: 1</code>, which is the normal read-only sharing mode.</li>
           <li><span class="ok">Added</span>: <code>POST /diagnostics/window-snapshot</code> now refuses to save a misleading image when offscreen material rendering does not match the live Music window.</li>
+          <li><span class="ok">Added</span>: <code>script/final_overnight_check.sh</code> wraps the final build, launch, bridge, window diagnostics, legacy audit, and whitespace checks for the 6:20 AM pass.</li>
           <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
           <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
           <li><span class="warn">Investigated</span>: Computer Use sees the installed <code>dist/Music.app</code>, but cannot attach to its custom window and returns <code>cgWindowNotFound</code>.</li>
@@ -175,6 +176,7 @@
           <li>Keep the app in a committed, rollback-safe state.</li>
           <li>Try to restore reliable app-scoped screenshots without using full-desktop captures.</li>
           <li>Run another build/bridge pass closer to the final report time.</li>
+          <li>Use <code>script/final_overnight_check.sh</code> for the final safe verification pass.</li>
           <li>Only start the website if Music remains stable and the report is already complete.</li>
         </ul>
       </article>
