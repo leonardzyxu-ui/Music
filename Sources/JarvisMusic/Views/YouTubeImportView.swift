@@ -122,7 +122,7 @@ struct YouTubeImportView: View {
             } label: {
                 Label(showBrowser ? "Hide Browser" : "Show Browser", systemImage: showBrowser ? "eye.slash" : "globe")
             }
-            .buttonStyle(MusicPillButtonStyle(.secondary, height: 38, horizontalPadding: 15))
+            .musicPillButton(.secondary, height: 38, horizontalPadding: 15)
         }
     }
 
@@ -184,7 +184,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Next", systemImage: "arrow.right")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.primary))
+                    .musicPillButton(.primary)
                     .disabled(!canContinueFromSearch)
                 }
 
@@ -240,7 +240,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Back", systemImage: "arrow.left")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.secondary))
+                    .musicPillButton(.secondary)
                     .disabled(model.isImporting)
 
                     Spacer()
@@ -250,7 +250,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Next", systemImage: "arrow.right")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.primary))
+                    .musicPillButton(.primary)
                     .disabled(importedSong == nil || model.isImporting)
                 }
             }
@@ -290,7 +290,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Back", systemImage: "arrow.left")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.secondary))
+                    .musicPillButton(.secondary)
 
                     Spacer()
 
@@ -299,7 +299,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Confirm", systemImage: "checkmark")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.primary))
+                    .musicPillButton(.primary)
                     .disabled(!canConfirmReview)
                 }
             }
@@ -354,15 +354,15 @@ struct YouTubeImportView: View {
             } label: {
                 Text("Use")
             }
-            .buttonStyle(MusicPillButtonStyle(.primary, height: 32, horizontalPadding: 13))
+            .musicPillButton(.primary, height: 32, horizontalPadding: 13)
             .disabled(directURLDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isImporting)
         }
         .padding(.horizontal, 12)
         .frame(height: 38)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            Capsule(style: .continuous)
                 .fill(Color.black.opacity(0.16))
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            Capsule(style: .continuous)
                 .stroke(.white.opacity(0.10), lineWidth: 1)
         }
     }
@@ -446,9 +446,9 @@ struct YouTubeImportView: View {
                     .padding(.horizontal, 12)
                     .frame(height: 38)
                     .background {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        Capsule(style: .continuous)
                             .fill(Color.black.opacity(0.16))
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        Capsule(style: .continuous)
                             .stroke(.white.opacity(0.10), lineWidth: 1)
                     }
                 }
@@ -618,7 +618,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Read Title", systemImage: "text.magnifyingglass")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.secondary))
+                    .musicPillButton(.secondary)
                     .disabled(selectedPreview == nil || model.isImporting)
 
                     Button {
@@ -630,7 +630,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Open Original", systemImage: "globe")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.secondary))
+                    .musicPillButton(.secondary)
                     .disabled(selectedPreview == nil)
 
                     Spacer()
@@ -640,7 +640,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label(model.isImporting ? "Importing" : "Import MP3", systemImage: "square.and.arrow.down")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.primary))
+                    .musicPillButton(.primary)
                     .disabled(!canImportSelected || model.isImporting)
                 }
                 .controlSize(.large)
@@ -784,7 +784,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Reload", systemImage: "arrow.clockwise")
                     }
-                    .buttonStyle(MusicPillButtonStyle(.secondary, height: 34, horizontalPadding: 12))
+                    .musicPillButton(.secondary, height: 34, horizontalPadding: 12)
                     Button {
                         showBrowser = false
                     } label: {

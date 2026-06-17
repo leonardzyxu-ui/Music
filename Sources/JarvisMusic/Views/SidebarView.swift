@@ -99,20 +99,26 @@ struct SidebarView: View {
     }
 
     private func sidebarButton(selection: LibrarySelection, icon: String, title: String, count: String?) -> some View {
-        Button {
+        SidebarSelectionRow(
+            icon: icon,
+            title: title,
+            count: count,
+            isSelected: library.selection == selection
+        )
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    select(selection)
+                }
+        )
+        .onTapGesture {
             select(selection)
-        } label: {
-            SidebarSelectionRow(
-                icon: icon,
-                title: title,
-                count: count,
-                isSelected: library.selection == selection
-            )
         }
-        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isButton)
     }
 
     private func select(_ selection: LibrarySelection) {
+        guard library.selection != selection else { return }
         var transaction = Transaction()
         transaction.animation = nil
         withTransaction(transaction) {

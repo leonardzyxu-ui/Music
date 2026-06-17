@@ -131,11 +131,11 @@ private struct NewPlaylistGlassDialog: View {
             HStack(spacing: 10) {
                 Spacer()
                 Button("Cancel", action: cancel)
-                    .buttonStyle(MusicPillButtonStyle(.secondary))
+                    .musicPillButton(.secondary)
                     .keyboardShortcut(.cancelAction)
                 Button("Create", action: create)
                     .keyboardShortcut(.defaultAction)
-                    .buttonStyle(MusicPillButtonStyle(.primary))
+                    .musicPillButton(.primary)
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }

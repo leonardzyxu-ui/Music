@@ -90,7 +90,7 @@ struct SongListView: View {
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(MusicPillButtonStyle(.secondary))
+                .musicPillButton(.secondary)
                 .help("Refresh Your Pick")
             }
             if compact {
@@ -99,7 +99,7 @@ struct SongListView: View {
                 } label: {
                     Image(systemName: "play.fill")
                 }
-                .buttonStyle(MusicPillButtonStyle(.primary))
+                .musicPillButton(.primary)
                 .disabled(library.visibleSongs().isEmpty)
             } else {
                 Button {
@@ -107,7 +107,7 @@ struct SongListView: View {
                 } label: {
                     Label("Play", systemImage: "play.fill")
                 }
-                .buttonStyle(MusicPillButtonStyle(.primary))
+                .musicPillButton(.primary)
                 .disabled(library.visibleSongs().isEmpty)
             }
         }
@@ -259,6 +259,12 @@ struct SongRow: View {
             .help("Play")
         }
         .foregroundStyle(isHighlighted ? .red : .primary)
+        .overlay(alignment: .top) {
+            selectedSeparator
+        }
+        .overlay(alignment: .bottom) {
+            selectedSeparator
+        }
         .contentShape(Rectangle())
         .onTapGesture(perform: play)
         .contextMenu {
@@ -286,6 +292,16 @@ struct SongRow: View {
             if song.sourceURL != nil {
                 Button("Open Original Video", action: openOriginal)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var selectedSeparator: some View {
+        if isHighlighted {
+            Rectangle()
+                .fill(Color.red.opacity(0.48))
+                .frame(height: 1)
+                .padding(.leading, 60)
         }
     }
 }

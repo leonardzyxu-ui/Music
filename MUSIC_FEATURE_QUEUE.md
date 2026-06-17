@@ -45,3 +45,7 @@ instead of interrupting the current task or trusting memory.
 - Make all left-side now-playing transport buttons pure white when a song is selected, and gray all of them out when no song is selected.
 - Restyle regular non-Play-Bar action buttons as capsule/semicircle-ended buttons instead of rounded rectangles.
 - Add subtle Liquid Glass lighting to regular app buttons, inspired by the App Store `Get` button, while keeping neutral buttons black-ish and primary buttons red.
+- Make YouTube URL input fields true semicircle/capsule rounded, not rounded rectangles.
+- Use native `.borderedProminent` Capsule Action Buttons with capsule border shape and tint instead of hand-painted gradients.
+- Keep selected/current song row separators visible and tint the selected row's top and bottom separators red.
+- Reduce sidebar navigation perceived lag by selecting rows on mouse-down instead of waiting for mouse-up.
