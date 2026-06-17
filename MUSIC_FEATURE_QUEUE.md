@@ -47,5 +47,6 @@ instead of interrupting the current task or trusting memory.
 - Add subtle Liquid Glass lighting to regular app buttons, inspired by the App Store `Get` button, while keeping neutral buttons black-ish and primary buttons red.
 - Make YouTube URL input fields true semicircle/capsule rounded, not rounded rectangles.
 - Use native `.borderedProminent` Capsule Action Buttons with capsule border shape and tint instead of hand-painted gradients.
+- Restore primary-only red Capsule Action Button lighting because native `.borderedProminent` tint rendered too flat, while keeping neutral capsule buttons flat/native.
 - Keep selected/current song row separators visible and tint the selected row's top and bottom separators red.
 - Reduce sidebar navigation perceived lag by selecting rows on mouse-down instead of waiting for mouse-up.
