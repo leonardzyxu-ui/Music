@@ -30,29 +30,7 @@ struct SongListView: View {
                 } else {
                     ScrollViewReader { scrollProxy in
                         List(library.visibleSongs(), selection: $library.selectedSongIDs) { song in
-                            SongRow(
-                                song: song,
-                                isCurrent: playback.currentSong?.id == song.id,
-                                isPlaying: playback.isPlaying && playback.currentSong?.id == song.id,
-                                groups: library.groups,
-                                showGroup: showGroup,
-                                showDuration: showDuration,
-                                play: {
-                                    library.selectedSongIDs = [song.id]
-                                    playback.play(song: song, queue: library.visibleSongs(), source: library.selection?.title ?? "Library", manual: true)
-                                },
-                                moveToGroup: { group in
-                                    library.move(song: song, to: group)
-                                },
-                                rename: {
-                                    if let title = Prompt.text(title: "Rename Song", message: "Rename '\(song.title)' to:", defaultValue: song.title), !title.isEmpty {
-                                        library.rename(song: song, to: title)
-                                    }
-                                },
-                                openOriginal: {
-                                    model.openOriginalVideo(for: song)
-                                }
-                            )
+                            songRow(song, showGroup: showGroup, showDuration: showDuration)
                             .id(song.id)
                             .listRowInsets(EdgeInsets(top: 5, leading: compact ? 14 : 22, bottom: 5, trailing: compact ? 12 : 22))
                             .listRowBackground(MusicPalette.contentBlack)
@@ -106,6 +84,16 @@ struct SongListView: View {
                 .font(.system(.callout, design: .default))
             }
             Spacer()
+            if library.selection == .smartPicker {
+                Button {
+                    library.refreshSmartPicker()
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help("Refresh Your Pick")
+            }
             if compact {
                 Button {
                     playVisible()
@@ -131,6 +119,44 @@ struct SongListView: View {
         .padding(.horizontal, compact ? 20 : 30)
         .padding(.top, compact ? 20 : 26)
         .padding(.bottom, compact ? 16 : 20)
+    }
+
+    private func songRow(_ song: Song, showGroup: Bool, showDuration: Bool) -> some View {
+        let isSmartPicker = library.selection == .smartPicker
+        let isRecycleBin = library.selection == .recycleBin
+        return SongRow(
+            song: song,
+            isCurrent: playback.currentSong?.id == song.id,
+            isPlaying: playback.isPlaying && playback.currentSong?.id == song.id,
+            groups: library.groups,
+            showGroup: showGroup,
+            showDuration: showDuration,
+            play: {
+                library.selectedSongIDs = [song.id]
+                playback.play(song: song, queue: library.visibleSongs(), source: library.selection?.title ?? "Library", manual: true)
+            },
+            moveToGroup: { group in
+                library.move(song: song, to: group)
+            },
+            removeFromSmartPicker: isSmartPicker ? {
+                library.removeFromSmartPicker(song)
+            } : nil,
+            restoreFromTrash: isRecycleBin ? {
+                Task {
+                    try? await library.restoreFromTrash(song)
+                    library.selection = .allSongs
+                    library.selectedSongIDs = [song.id]
+                }
+            } : nil,
+            rename: {
+                if let title = Prompt.text(title: "Rename Song", message: "Rename '\(song.title)' to:", defaultValue: song.title), !title.isEmpty {
+                    library.rename(song: song, to: title)
+                }
+            },
+            openOriginal: {
+                model.openOriginalVideo(for: song)
+            }
+        )
     }
 
     private func playVisible() {
@@ -161,6 +187,8 @@ struct SongRow: View {
     var showDuration: Bool
     var play: () -> Void
     var moveToGroup: (String) -> Void
+    var removeFromSmartPicker: (() -> Void)?
+    var restoreFromTrash: (() -> Void)?
     var rename: () -> Void
     var openOriginal: () -> Void
 
@@ -189,7 +217,21 @@ struct SongRow: View {
                     .lineLimit(1)
                     .font(MusicTypography.songSubtitle)
             }
+
             Spacer(minLength: 20)
+            Group {
+                if song.sourceURL != nil {
+                    Button(action: openOriginal) {
+                        Image(systemName: "play.rectangle")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Open Original Video")
+                } else {
+                    Color.clear
+                }
+            }
+            .frame(width: 24, height: 24)
+
             if showGroup {
                 Text(song.group)
                     .foregroundStyle(.secondary)
@@ -199,15 +241,8 @@ struct SongRow: View {
             if showDuration {
                 Text(MusicFormatters.duration(song.duration))
                     .foregroundStyle(.secondary)
-                    .font(.system(.body, design: .monospaced))
+                    .font(MusicTypography.fixed(14, weight: .medium))
                     .frame(width: 54, alignment: .trailing)
-            }
-            if song.sourceURL != nil {
-                Button(action: openOriginal) {
-                    Image(systemName: "play.rectangle")
-                }
-                .buttonStyle(.borderless)
-                .help("Open Original Video")
             }
             Button(action: play) {
                 Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
@@ -222,15 +257,22 @@ struct SongRow: View {
         .contextMenu {
             Button("Play", action: play)
             Button("Rename", action: rename)
-            Menu("Move to Group") {
-                Button("All Songs") { moveToGroup("All Songs") }
-                ForEach(groups, id: \.self) { group in
-                    Button(group) { moveToGroup(group) }
-                }
-                Divider()
-                Button("New Group...") {
-                    if let group = Prompt.text(title: "Move to New Group", message: "Enter a group name:") {
-                        moveToGroup(group)
+            if let removeFromSmartPicker {
+                Button("Remove from Your Pick", action: removeFromSmartPicker)
+            }
+            if let restoreFromTrash {
+                Button("Restore to All Songs", action: restoreFromTrash)
+            } else {
+                Menu("Move to Group") {
+                    Button("All Songs") { moveToGroup("All Songs") }
+                    ForEach(groups, id: \.self) { group in
+                        Button(group) { moveToGroup(group) }
+                    }
+                    Divider()
+                    Button("New Group...") {
+                        if let group = Prompt.text(title: "Move to New Group", message: "Enter a group name:") {
+                            moveToGroup(group)
+                        }
                     }
                 }
             }

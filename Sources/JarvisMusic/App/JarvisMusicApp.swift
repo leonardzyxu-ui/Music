@@ -73,7 +73,7 @@ enum MusicWindowActions {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let minimumWindowSize = NSSize(width: 900, height: 620)
+    private let minimumWindowSize = NSSize(width: 1180, height: 760)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)

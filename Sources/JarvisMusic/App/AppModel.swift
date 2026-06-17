@@ -21,6 +21,9 @@ final class AppModel: ObservableObject {
 
     private var started = false
     private var server: LocalControlServer?
+    private var smartPickerIdleRefreshTask: Task<Void, Never>?
+    private var smartPickerIdleSince: Date?
+    private var didAutoRefreshForCurrentIdlePeriod = false
     private var lastImportFailureCode: String?
     private var lastImportFailureRetryable: Bool?
     private var lastImportRecoverySuggestion: String?
@@ -53,6 +56,7 @@ final class AppModel: ObservableObject {
         library.searchQuery = ""
         await library.load()
         startBridge()
+        startSmartPickerIdleRefreshMonitor()
     }
 
     func startBridge() {
@@ -70,6 +74,39 @@ final class AppModel: ObservableObject {
         } catch {
             bridgeStatus = "Bridge failed: \(error.localizedDescription)"
         }
+    }
+
+    private func startSmartPickerIdleRefreshMonitor() {
+        smartPickerIdleRefreshTask?.cancel()
+        smartPickerIdleRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                self?.refreshSmartPickerAfterIdleIfNeeded()
+            }
+        }
+    }
+
+    private func refreshSmartPickerAfterIdleIfNeeded() {
+        if playback.isPlaying {
+            smartPickerIdleSince = nil
+            didAutoRefreshForCurrentIdlePeriod = false
+            return
+        }
+
+        let now = Date()
+        if smartPickerIdleSince == nil {
+            smartPickerIdleSince = now
+            return
+        }
+
+        guard
+            !didAutoRefreshForCurrentIdlePeriod,
+            let smartPickerIdleSince,
+            now.timeIntervalSince(smartPickerIdleSince) >= 30 * 60
+        else { return }
+
+        library.refreshSmartPicker()
+        didAutoRefreshForCurrentIdlePeriod = true
     }
 
     @discardableResult
@@ -795,6 +832,12 @@ final class AppModel: ObservableObject {
                 "title": selection.title,
                 "type": "smart"
             ]
+        case .recycleBin:
+            return [
+                "id": "recycle-bin",
+                "title": selection.title,
+                "type": "trash"
+            ]
         case .group(let group):
             return [
                 "id": StableID.shortHash(group, prefix: "group-"),
@@ -938,6 +981,13 @@ final class AppModel: ObservableObject {
                 "songCount": library.smartSongs.count,
                 "smart": true,
                 "lastRefreshAt": (library.lastSmartPickerRefreshAt.map { ISO8601DateFormatter().string(from: $0) } ?? NSNull()) as Any
+            ],
+            [
+                "id": "recycle-bin",
+                "name": "Recycle Bin",
+                "type": "trash",
+                "songCount": library.trashedSongs.count,
+                "smart": false
             ]
         ]
 
@@ -992,6 +1042,11 @@ final class AppModel: ObservableObject {
         let smartAliases = Set(["smart", "smart picker", "smart-picker", "your pick", "your-pick"])
         if cleanID == "smart-picker" || cleanName.map(smartAliases.contains) == true {
             return PlaylistTarget(id: "smart-picker", name: "Your Pick", type: "smart", smart: true, selection: .smartPicker, songs: library.smartSongs)
+        }
+
+        let trashAliases = Set(["trash", "recycle bin", "recycle-bin", "deleted", "deleted songs"])
+        if cleanID == "recycle-bin" || cleanName.map(trashAliases.contains) == true {
+            return PlaylistTarget(id: "recycle-bin", name: "Recycle Bin", type: "trash", smart: false, selection: .recycleBin, songs: library.trashedSongs)
         }
 
         for group in library.groups {

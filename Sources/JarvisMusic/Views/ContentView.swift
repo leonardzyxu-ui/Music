@@ -29,12 +29,12 @@ struct ContentView: View {
                             Color.clear.frame(height: 90)
                         }
                         .overlay(alignment: .bottom) {
-                            NowPlayingBar(playback: model.playback)
+                            NowPlayingBar(model: model)
                                 .padding(.horizontal, 18)
                         }
                 }
                 .navigationSplitViewStyle(.balanced)
-                .frame(minWidth: 900, minHeight: 620)
+                .frame(minWidth: 1180, minHeight: 760)
                 .background(MusicPalette.spaceBlack)
                 .modifier(
                     LibrarySearchToolbar(
@@ -45,12 +45,11 @@ struct ContentView: View {
                         isEnabled: library.selection != .youtube
                     )
                 )
-                .blur(radius: isShowingNewPlaylistDialog ? 7 : 0)
-                .saturation(isShowingNewPlaylistDialog ? 0.86 : 1)
-                .animation(.snappy(duration: 0.2), value: isShowingNewPlaylistDialog)
 
                 if isShowingNewPlaylistDialog {
-                    Color.black.opacity(0.30)
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .overlay(Color.black.opacity(0.28))
                         .ignoresSafeArea()
                         .transition(.opacity)
                         .onTapGesture(perform: dismissNewPlaylistDialog)
@@ -116,13 +115,15 @@ private struct NewPlaylistGlassDialog: View {
             TextField("Playlist name", text: $name)
                 .textFieldStyle(.plain)
                 .font(MusicTypography.fixed(16, weight: .medium))
-                .padding(.horizontal, 13)
-                .frame(height: 38)
+                .padding(.horizontal, 18)
+                .frame(height: 44)
                 .background {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.black.opacity(0.18))
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(.white.opacity(0.14), lineWidth: 1)
+                    Capsule(style: .continuous)
+                        .fill(.ultraThinMaterial)
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.035))
+                    Capsule(style: .continuous)
+                        .stroke(.white.opacity(0.18), lineWidth: 1)
                 }
                 .focused($isNameFocused)
                 .onSubmit(create)
@@ -144,17 +145,7 @@ private struct NewPlaylistGlassDialog: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(.ultraThinMaterial)
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.10),
-                            Color.white.opacity(0.025),
-                            Color.black.opacity(0.10)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(Color.white.opacity(0.045))
         }
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)

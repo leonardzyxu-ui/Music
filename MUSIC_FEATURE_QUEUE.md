@@ -6,28 +6,34 @@ instead of interrupting the current task or trusting memory.
 
 ## Active
 
-- Redesign YouTube Import as a guided step flow:
-  1. Search for a song/video.
-  2. Show thumbnail candidate rows and select one.
-  3. Click Next to slide to a download/progress screen with one long bar and current helper stage.
-  4. Click Next after download finishes to review artwork and edit the song name.
-  5. Confirm, return to All Songs, select/reveal the imported song, and cue it in the play bar paused at the start.
+- None.
 
 ## Parked Ideas
 
-- Add manual `Your Pick` refresh.
-- Automatically refresh `Your Pick` after 30 minutes of inactivity, meaning no song is playing.
-- Replace typewriter/monospaced-looking duration numbers with SF Pro-style numerals.
-- Add a Recycle Bin for deleted songs and expose it from the menu/sidebar later.
-- Lower the current-song artwork in the now-playing bar slightly so it does not touch the top edge.
-- Move the YouTube/original-video icon to the left side of song rows so duration/play columns line up for songs with and without source metadata.
-- Now-playing bar right-side controls need an audit: delete controls that cannot work, and turn the remaining ones into real buttons.
-- Give now-playing bar buttons a full circular hit area instead of requiring the cursor to land exactly on the symbol.
-- Give sidebar menu rows larger click patches so the whole row area responds immediately, not only the label/icon.
-- Make the now-playing `...` button open the same actions as a song row secondary-click menu.
-- When nothing is playing, replace the sad `Not Playing / Choose a song` center text with a half-transparent Music logo, dim unavailable left transport controls, and make player buttons slightly larger like Apple Music.
-- Enforce a real minimum Music window size at the Figure One boundary: do not allow horizontal or vertical resizing that hides song metadata, shrinks/removes player controls, crops the play bar, leaves only the sidebar, or collapses down to traffic lights. The app should preserve the accepted full UI with no broken squish states.
+- None.
 
 ## Completed
 
 - Add an explicit persistent queue file for Leo's sudden ideas and non-interrupting feature requests.
+- Redesign YouTube Import as a guided step flow: search/select, download progress, review/rename, confirm, return to All Songs, select the imported song, and cue it paused at the start.
+- Add manual `Your Pick` refresh.
+- Automatically refresh `Your Pick` after 30 minutes of inactivity, meaning no song is playing.
+- Replace typewriter/monospaced-looking duration numbers with SF Pro-style numerals.
+- Add a Recycle Bin for deleted songs and expose it from the menu/sidebar.
+- Lower now-playing artwork/logo/text in the play bar so it does not kiss the top edge.
+- Move the YouTube/original-video icon into a fixed column between song info and `All Songs` so duration/play columns line up.
+- Audit now-playing bar right-side controls: remove non-working controls and turn the remaining ones into real controls.
+- Give now-playing bar buttons a full circular hit area instead of requiring the cursor to land exactly on the symbol.
+- Give sidebar menu rows larger click patches so the whole row area responds immediately, not only the label/icon.
+- Make the now-playing `...` button open the same core actions as a song row secondary-click menu.
+- When nothing is playing, replace the `Not Playing / Choose a song` center text with a half-transparent Music logo, dim unavailable left transport controls, and make player buttons slightly larger like Apple Music.
+- Enforce a real minimum Music window size at the Figure One boundary so resizing cannot collapse the UI into broken squish states.
+- In YouTube Import, make `Back` use the same pill/capsule shape as `Next`, but keep it dark/neutral instead of red.
+- In YouTube Import, make Back navigation slide opposite to Next navigation.
+- Change the sidebar YouTube symbol to a video icon instead of an import/download icon.
+- Make selected sidebar rows look like Apple Music: rounded background behind the full row, wider click area, and red selected text.
+- Add a way to remove a song from `Your Pick` by demoting it below the current Your Pick cutoff so the next-ranked song rises.
+- Restyle the New Playlist dialog as one large Liquid Glass block, removing the old gray-to-black gradient look.
+- Restyle New Playlist text input as a Liquid Glass capsule with two semicircle ends.
+- Restyle the YouTube Import panels to avoid the old gray-to-black gradient panel; use cleaner Liquid Glass.
+- Fix New Playlist modal presentation/dismissal jitter by avoiding the background blur transform that caused the app content to jolt.

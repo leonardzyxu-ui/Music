@@ -1,8 +1,17 @@
+import AppKit
 import SwiftUI
 
 struct NowPlayingBar: View {
-    @ObservedObject var playback: PlaybackStore
+    @ObservedObject var model: AppModel
+    @ObservedObject private var playback: PlaybackStore
+    @ObservedObject private var library: LibraryStore
     @State private var isScrubberHovering = false
+
+    init(model: AppModel) {
+        self.model = model
+        self.playback = model.playback
+        self.library = model.library
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -14,7 +23,7 @@ struct NowPlayingBar: View {
             let contentPadding = compact ? CGFloat(16) : CGFloat(18)
             let itemSpacing = compact ? CGFloat(14) : CGFloat(16)
             let leftWidth = compact ? CGFloat(132) : CGFloat(176)
-            let rightWidth = compact ? CGFloat(0) : CGFloat(158)
+            let rightWidth = compact ? CGFloat(0) : CGFloat(124)
             let spacingBudget = compact ? itemSpacing : itemSpacing * 2
             let availableCenter = barWidth - contentPadding * 2 - leftWidth - rightWidth - spacingBudget
             let centerWidth = max(compact ? CGFloat(124) : CGFloat(190), availableCenter)
@@ -69,58 +78,69 @@ struct NowPlayingBar: View {
     }
 
     private func transportControls(includeModes: Bool) -> some View {
-        HStack(spacing: includeModes ? 14 : 13) {
+        let hasSong = playback.currentSong != nil
+        return HStack(spacing: includeModes ? 14 : 13) {
             if includeModes {
                 Button {
                     playback.shuffle.toggle()
                 } label: {
                     Image(systemName: "shuffle")
-                        .frame(width: 18, height: 18)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Circle())
                 }
-                .foregroundStyle(playback.shuffle ? Color.red : Color.secondary)
+                .foregroundStyle(hasSong ? (playback.shuffle ? Color.red : Color.secondary) : Color.secondary.opacity(0.34))
                 .buttonStyle(.plain)
                 .help("Shuffle")
+                .disabled(!hasSong)
             }
 
             Button { playback.previous() } label: {
                 Image(systemName: "backward.fill")
-                    .frame(width: 22, height: 26)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .font(.title2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(hasSong ? Color.secondary : Color.secondary.opacity(0.34))
             .help("Previous")
+            .disabled(!hasSong)
 
             Button {
                 playback.isPlaying ? playback.pause() : playback.resume()
             } label: {
                 Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
                     .font(MusicTypography.fixed(27, weight: .semibold))
-                    .frame(width: 34, height: 36)
+                    .frame(width: 40, height: 38)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.primary)
+            .foregroundStyle(hasSong ? Color.primary : Color.secondary.opacity(0.34))
             .help(playback.isPlaying ? "Pause" : "Play")
+            .disabled(!hasSong)
 
             Button { playback.next() } label: {
                 Image(systemName: "forward.fill")
-                    .frame(width: 22, height: 26)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .font(.title2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(hasSong ? Color.secondary : Color.secondary.opacity(0.34))
             .help("Next")
+            .disabled(!hasSong)
 
             if includeModes {
                 Button {
                     playback.repeatMode = (playback.repeatMode + 1) % 3
                 } label: {
                     Image(systemName: playback.repeatMode == 2 ? "repeat.1" : "repeat")
-                        .frame(width: 18, height: 18)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Circle())
                 }
-                .foregroundStyle(playback.repeatMode == 0 ? Color.secondary : Color.red)
+                .foregroundStyle(hasSong ? (playback.repeatMode == 0 ? Color.secondary : Color.red) : Color.secondary.opacity(0.34))
                 .buttonStyle(.plain)
                 .help("Repeat")
+                .disabled(!hasSong)
             }
         }
     }
@@ -135,7 +155,7 @@ struct NowPlayingBar: View {
 
                     HStack(spacing: 10) {
                         Text(MusicFormatters.duration(playback.currentTime))
-                            .font(MusicTypography.fixed(14, weight: .semibold).monospacedDigit())
+                            .font(MusicTypography.fixed(14, weight: .semibold))
                             .frame(width: 54, alignment: .trailing)
 
                         FlatScrubBar(
@@ -146,7 +166,7 @@ struct NowPlayingBar: View {
                         .frame(maxWidth: .infinity)
 
                         Text(remainingText)
-                            .font(MusicTypography.fixed(14, weight: .semibold).monospacedDigit())
+                            .font(MusicTypography.fixed(14, weight: .semibold))
                             .frame(width: 58, alignment: .leading)
                     }
                     .foregroundStyle(.primary)
@@ -158,10 +178,11 @@ struct NowPlayingBar: View {
             } else {
                 VStack(spacing: 5) {
                     trackIdentity
+                        .offset(y: 3)
                     compactProgressBar
                         .frame(height: 3)
                         .padding(.horizontal, playback.currentSong == nil ? 28 : 0)
-                        .padding(.vertical, 6)
+                        .padding(.top, 5)
                         .contentShape(Rectangle())
                         .onHover { hovering in
                             isScrubberHovering = hovering
@@ -177,16 +198,29 @@ struct NowPlayingBar: View {
         HStack(spacing: 9) {
             if playback.currentSong != nil {
                 ArtworkView(song: playback.currentSong, size: 28)
+                    .offset(y: 2)
+            } else if let image = appLogoImage {
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 31, height: 31)
+                    .opacity(0.42)
+            } else {
+                Image(systemName: "music.note")
+                    .font(MusicTypography.fixed(24, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.38))
             }
 
-            VStack(alignment: playback.currentSong == nil ? .center : .leading, spacing: 2) {
-                Text(playback.currentSong?.title ?? "Not Playing")
-                    .font(MusicTypography.playerTitle)
-                    .lineLimit(1)
-                Text(playback.currentSong?.artist ?? "Choose a song")
-                    .font(MusicTypography.playerSubtitle)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            if playback.currentSong != nil {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(playback.currentSong?.title ?? "")
+                        .font(MusicTypography.playerTitle)
+                        .lineLimit(1)
+                    Text(playback.currentSong?.artist ?? "")
+                        .font(MusicTypography.playerSubtitle)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -206,35 +240,96 @@ struct NowPlayingBar: View {
     }
 
     private var secondaryControls: some View {
-        HStack(spacing: 14) {
-            Button {} label: {
+        HStack(spacing: 12) {
+            Menu {
+                if let song = playback.currentSong {
+                    Button(playback.isPlaying ? "Pause" : "Play") {
+                        playback.isPlaying ? playback.pause() : playback.resume()
+                    }
+                    Button("Rename") {
+                        if let title = Prompt.text(title: "Rename Song", message: "Rename '\(song.title)' to:", defaultValue: song.title), !title.isEmpty {
+                            library.rename(song: song, to: title)
+                        }
+                    }
+                    Menu("Move to Group") {
+                        Button("All Songs") {
+                            library.move(song: song, to: "All Songs")
+                        }
+                        ForEach(library.groups, id: \.self) { group in
+                            Button(group) {
+                                library.move(song: song, to: group)
+                            }
+                        }
+                        Divider()
+                        Button("New Group...") {
+                            if let group = Prompt.text(title: "Move to New Group", message: "Enter a group name:") {
+                                library.move(song: song, to: group)
+                            }
+                        }
+                    }
+                    if song.sourceURL != nil {
+                        Button("Open Original Video") {
+                            model.openOriginalVideo(for: song)
+                        }
+                    }
+                    Divider()
+                    Button("Move to Recycle Bin", role: .destructive) {
+                        library.selectedSongIDs = [song.id]
+                        Task { await model.moveSelectedSongsToTrash() }
+                    }
+                } else {
+                    Text("No song selected")
+                }
+            } label: {
                 Image(systemName: "ellipsis")
+                    .frame(width: 30, height: 30)
+                    .contentShape(Circle())
             }
+            .menuStyle(.borderlessButton)
             .help("More")
 
-            Button {} label: {
-                Image(systemName: "quote.bubble")
-            }
-            .help("Lyrics")
-
-            Button {} label: {
+            Menu {
+                Text(playback.queueSnapshot.source)
+                Divider()
+                if playback.queueSnapshot.songIDs.isEmpty {
+                    Text("Queue is empty")
+                } else {
+                    ForEach(playback.queueSnapshot.songIDs.prefix(12), id: \.self) { id in
+                        if let song = library.song(id: id) {
+                            Button(song.title) {
+                                _ = playback.playSongID(id)
+                            }
+                        }
+                    }
+                }
+            } label: {
                 Image(systemName: "list.bullet")
+                    .frame(width: 30, height: 30)
+                    .contentShape(Circle())
             }
+            .menuStyle(.borderlessButton)
             .help("Queue")
 
-            Button {} label: {
-                Image(systemName: "airplayaudio")
+            Button {
+                playback.setVolume(playback.volume > 0 ? 0 : 0.9)
+            } label: {
+                Image(systemName: playback.volume > 0 ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    .frame(width: 30, height: 30)
+                    .contentShape(Circle())
             }
-            .help("AirPlay")
-
-            Button {} label: {
-                Image(systemName: "speaker.wave.2.fill")
-            }
-            .help("Volume")
+            .help("Mute")
         }
         .font(.title3)
         .foregroundStyle(.primary.opacity(0.74))
         .buttonStyle(.plain)
+    }
+
+    private var appLogoImage: Image? {
+        guard
+            let url = Bundle.module.url(forResource: "AppLogo", withExtension: "png"),
+            let nsImage = NSImage(contentsOf: url)
+        else { return nil }
+        return Image(nsImage: nsImage)
     }
 
     private var remainingText: String {

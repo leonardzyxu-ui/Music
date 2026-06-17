@@ -8,6 +8,7 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var events: [ListeningEvent] = []
     @Published private(set) var smartRankingSongIDs: [String] = []
     @Published private(set) var explicitGroups: [String] = []
+    @Published private(set) var trashedSongs: [Song] = []
     @Published private(set) var lastSmartPickerRefreshAt: Date?
     @Published var selection: LibrarySelection? = .allSongs
     @Published var selectedSongIDs: Set<String> = []
@@ -43,7 +44,8 @@ final class LibraryStore: ObservableObject {
     }
 
     var selectedSongs: [Song] {
-        songs.filter { selectedSongIDs.contains($0.id) }
+        let source = selection == .recycleBin ? trashedSongs : songs
+        return source.filter { selectedSongIDs.contains($0.id) }
     }
 
     func load() async {
@@ -80,6 +82,8 @@ final class LibraryStore: ObservableObject {
             base = songs.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         case .smartPicker:
             base = smartSongs
+        case .recycleBin:
+            base = trashedSongs.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         case .group(let group):
             base = songs.filter { $0.group == group }.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         case .youtube:
@@ -259,6 +263,22 @@ final class LibraryStore: ObservableObject {
         saveDatabase()
     }
 
+    func removeFromSmartPicker(_ song: Song) {
+        let ranked = rankedSongScores(excluding: song.id)
+        guard !ranked.isEmpty else { return }
+        let cutoffIndex = min(19, ranked.count - 1)
+        let cutoffScore = ranked[cutoffIndex].score
+        let nextScore = ranked.indices.contains(cutoffIndex + 1) ? ranked[cutoffIndex + 1].score : cutoffScore - 2
+        let targetScore = (cutoffScore + nextScore) / 2
+
+        var nextStats = database.stats[song.id] ?? ListeningStats(songID: song.id)
+        nextStats.smartPickerRankOverride = targetScore
+        nextStats.rankScore = targetScore
+        database.stats[song.id] = nextStats
+        stats = database.stats
+        refreshSmartPicker()
+    }
+
     func record(_ event: ListeningEvent) {
         var next = database.stats[event.songID] ?? ListeningStats(songID: event.songID)
         next.plays += event.endedReason == "start" ? 0 : 1
@@ -365,11 +385,41 @@ final class LibraryStore: ObservableObject {
         let uniqueSongs = Array(Dictionary(uniqueKeysWithValues: songsToTrash.map { ($0.id, $0) }).values)
         guard !uniqueSongs.isEmpty else { return }
 
+        try FileManager.default.createDirectory(at: AppConfiguration.recycleBinURL, withIntermediateDirectories: true)
+        var movedSongs: [Song] = []
         for song in uniqueSongs {
-            try FileManager.default.trashItem(at: song.fileURL, resultingItemURL: nil)
+            let destination = uniqueRecycleBinURL(for: song.fileURL)
+            try FileManager.default.moveItem(at: song.fileURL, to: destination)
+            var trashed = song
+            trashed.fileURLString = destination.path
+            trashed.relativePath = destination.lastPathComponent
+            trashed.group = "Recycle Bin"
+            trashed.updatedAt = Date()
+            movedSongs.append(trashed)
         }
 
-        selectedSongIDs.subtract(uniqueSongs.map(\.id))
+        let movedIDs = Set(uniqueSongs.map(\.id))
+        database.songs.removeAll { movedIDs.contains($0.id) }
+        var nextTrash = database.trashedSongs ?? []
+        nextTrash.removeAll { movedIDs.contains($0.id) }
+        nextTrash.append(contentsOf: movedSongs)
+        database.trashedSongs = nextTrash.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        selectedSongIDs.subtract(movedIDs)
+        songs = database.songs
+        trashedSongs = database.trashedSongs ?? []
+        pruneMissingData()
+        saveDatabase()
+        await scanLibrary(silent: true)
+    }
+
+    func restoreFromTrash(_ song: Song) async throws {
+        try FileManager.default.createDirectory(at: libraryURL, withIntermediateDirectories: true)
+        let destination = uniqueLibraryURL(for: song)
+        try FileManager.default.moveItem(at: song.fileURL, to: destination)
+        database.trashedSongs = (database.trashedSongs ?? []).filter { $0.id != song.id }
+        trashedSongs = database.trashedSongs ?? []
+        selectedSongIDs.remove(song.id)
+        saveDatabase()
         await scanLibrary(silent: true)
     }
 
@@ -398,6 +448,7 @@ final class LibraryStore: ObservableObject {
     private func ensureStorage() {
         try? FileManager.default.createDirectory(at: AppConfiguration.applicationSupportURL, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: AppConfiguration.artworkDirectoryURL, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: AppConfiguration.recycleBinURL, withIntermediateDirectories: true)
     }
 
     private func loadDatabase() {
@@ -416,6 +467,7 @@ final class LibraryStore: ObservableObject {
         events = database.events
         smartRankingSongIDs = database.smartRankingSongIDs
         explicitGroups = database.explicitGroups
+        trashedSongs = database.trashedSongs ?? []
         lastSmartPickerRefreshAt = database.lastSmartPickerRefreshAt
     }
 
@@ -452,6 +504,44 @@ final class LibraryStore: ObservableObject {
         .joined(separator: "\n")
     }
 
+    private func uniqueRecycleBinURL(for sourceURL: URL) -> URL {
+        uniqueFileURL(
+            in: AppConfiguration.recycleBinURL,
+            baseName: sourceURL.deletingPathExtension().lastPathComponent,
+            fileExtension: sourceURL.pathExtension
+        )
+    }
+
+    private func uniqueLibraryURL(for song: Song) -> URL {
+        let sourceURL = song.fileURL
+        let baseName = sourceURL.deletingPathExtension().lastPathComponent
+        let fileExtension = sourceURL.pathExtension.isEmpty ? URL(fileURLWithPath: song.fileName).pathExtension : sourceURL.pathExtension
+        return uniqueFileURL(
+            in: libraryURL,
+            baseName: baseName.isEmpty ? URL(fileURLWithPath: song.fileName).deletingPathExtension().lastPathComponent : baseName,
+            fileExtension: fileExtension
+        )
+    }
+
+    private func uniqueFileURL(in directory: URL, baseName: String, fileExtension: String) -> URL {
+        let cleanBase = MusicFormatters.clean(baseName, maxLength: 90).isEmpty ? "Recovered Song" : MusicFormatters.clean(baseName, maxLength: 90)
+        let ext = fileExtension.trimmingCharacters(in: .whitespacesAndNewlines)
+        func candidate(_ suffix: Int?) -> URL {
+            let name = suffix.map { "\(cleanBase) \($0)" } ?? cleanBase
+            return ext.isEmpty
+                ? directory.appendingPathComponent(name)
+                : directory.appendingPathComponent(name).appendingPathExtension(ext)
+        }
+
+        var url = candidate(nil)
+        var index = 2
+        while FileManager.default.fileExists(atPath: url.path) {
+            url = candidate(index)
+            index += 1
+        }
+        return url
+    }
+
     private func scanDeltaSummary(added: Int, removed: Int, changed: Int) -> String {
         let parts = [
             added == 0 ? nil : "+\(added)",
@@ -466,25 +556,35 @@ final class LibraryStore: ObservableObject {
         database.stats = database.stats.filter { ids.contains($0.key) }
         database.events = database.events.filter { ids.contains($0.songID) }
         database.smartRankingSongIDs = database.smartRankingSongIDs.filter { ids.contains($0) }
+        database.trashedSongs = (database.trashedSongs ?? []).filter { FileManager.default.fileExists(atPath: $0.fileURL.path) }
     }
 
     private func rankSongs() -> [Song] {
+        rankedSongScores().map(\.song)
+    }
+
+    private func rankedSongScores(excluding excludedID: String? = nil) -> [(song: Song, score: Double)] {
         let recentEventsBySong = Dictionary(grouping: database.events, by: \.songID)
-        return songs.sorted { left, right in
-            let leftStats = database.stats[left.id] ?? ListeningStats(songID: left.id)
-            let rightStats = database.stats[right.id] ?? ListeningStats(songID: right.id)
-            let leftScore = score(stats: leftStats, recentEvents: recentEventsBySong[left.id] ?? [])
-            let rightScore = score(stats: rightStats, recentEvents: recentEventsBySong[right.id] ?? [])
-            if abs(leftScore - rightScore) > 0.001 {
-                return leftScore > rightScore
+        return songs
+            .filter { $0.id != excludedID }
+            .map { song in
+                let stats = database.stats[song.id] ?? ListeningStats(songID: song.id)
+                let computedScore = score(stats: stats, recentEvents: recentEventsBySong[song.id] ?? [])
+                return (song: song, score: stats.smartPickerRankOverride ?? computedScore)
             }
-            let leftDate = leftStats.lastPlayedAt ?? .distantPast
-            let rightDate = rightStats.lastPlayedAt ?? .distantPast
-            if leftDate != rightDate {
-                return leftDate > rightDate
+            .sorted { left, right in
+                if abs(left.score - right.score) > 0.001 {
+                    return left.score > right.score
+                }
+                let leftStats = database.stats[left.song.id] ?? ListeningStats(songID: left.song.id)
+                let rightStats = database.stats[right.song.id] ?? ListeningStats(songID: right.song.id)
+                let leftDate = leftStats.lastPlayedAt ?? .distantPast
+                let rightDate = rightStats.lastPlayedAt ?? .distantPast
+                if leftDate != rightDate {
+                    return leftDate > rightDate
+                }
+                return left.song.title.localizedCaseInsensitiveCompare(right.song.title) == .orderedAscending
             }
-            return left.title.localizedCaseInsensitiveCompare(right.title) == .orderedAscending
-        }
     }
 
     private func score(stats: ListeningStats, recentEvents: [ListeningEvent]) -> Double {

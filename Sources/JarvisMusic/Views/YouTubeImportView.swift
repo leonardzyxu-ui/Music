@@ -22,6 +22,7 @@ private enum YouTubeImportStep: Int, CaseIterable, Hashable {
 struct YouTubeImportView: View {
     @ObservedObject var model: AppModel
     @State private var step: YouTubeImportStep = .search
+    @State private var stepDirection = 1
     @State private var searchDraft = ""
     @State private var directURLDraft = ""
     @State private var searchResults: [ImportPreview] = []
@@ -72,12 +73,7 @@ struct YouTubeImportView: View {
 
                         ZStack {
                             guidedStepContent(compact: compact)
-                                .transition(
-                                    .asymmetric(
-                                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                                        removal: .move(edge: .leading).combined(with: .opacity)
-                                    )
-                                )
+                                .transition(stepTransition)
                                 .id(step)
                         }
                         .animation(.snappy(duration: 0.28), value: step)
@@ -94,7 +90,7 @@ struct YouTubeImportView: View {
             importedSong = nil
             reviewTitle = ""
             if step != .search, !model.isImporting {
-                step = .search
+                moveToStep(.search)
             }
         }
         .onChange(of: model.youtubeAddress) { _, newValue in
@@ -189,9 +185,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Next", systemImage: "arrow.right")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .tint(canContinueFromSearch ? .red : .gray)
+                    .buttonStyle(ImportFlowPillButtonStyle(kind: .primary))
                     .disabled(!canContinueFromSearch)
                 }
 
@@ -233,7 +227,6 @@ struct YouTubeImportView: View {
                         Text(progressPercentText)
                             .font(MusicTypography.fixed(15, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.62))
-                            .monospacedDigit()
                     }
 
                     FlatProgressBar(value: model.youtubeImportProgressFraction)
@@ -244,11 +237,11 @@ struct YouTubeImportView: View {
 
                 HStack {
                     Button {
-                        step = .search
+                        moveToStep(.search)
                     } label: {
                         Label("Back", systemImage: "arrow.left")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ImportFlowPillButtonStyle(kind: .secondary))
                     .disabled(model.isImporting)
 
                     Spacer()
@@ -258,9 +251,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Next", systemImage: "arrow.right")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .tint(importedSong == nil || model.isImporting ? .gray : .red)
+                    .buttonStyle(ImportFlowPillButtonStyle(kind: .primary))
                     .disabled(importedSong == nil || model.isImporting)
                 }
             }
@@ -296,11 +287,11 @@ struct YouTubeImportView: View {
 
                 HStack {
                     Button {
-                        step = .download
+                        moveToStep(.download)
                     } label: {
                         Label("Back", systemImage: "arrow.left")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(ImportFlowPillButtonStyle(kind: .secondary))
 
                     Spacer()
 
@@ -309,9 +300,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Confirm", systemImage: "checkmark")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .tint(canConfirmReview ? .red : .gray)
+                    .buttonStyle(ImportFlowPillButtonStyle(kind: .primary))
                     .disabled(!canConfirmReview)
                 }
             }
@@ -700,7 +689,6 @@ struct YouTubeImportView: View {
                 Text(progressPercentText)
                     .font(MusicTypography.fixed(13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.64))
-                    .monospacedDigit()
             }
 
             FlatProgressBar(value: model.youtubeImportProgressFraction)
@@ -864,6 +852,13 @@ struct YouTubeImportView: View {
         return YouTubeImportService.isSupportedImportURL(url) && !model.importTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var stepTransition: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: stepDirection >= 0 ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: stepDirection >= 0 ? .leading : .trailing).combined(with: .opacity)
+        )
+    }
+
     private var statusIcon: String {
         if searchStatus.localizedCaseInsensitiveContains("failed") || searchStatus.localizedCaseInsensitiveContains("not installed") {
             return "exclamationmark.triangle.fill"
@@ -939,7 +934,7 @@ struct YouTubeImportView: View {
         importedSong = nil
         reviewTitle = ""
         if step != .search {
-            step = .search
+            moveToStep(.search)
         }
         Task { await searchYouTube(query) }
     }
@@ -996,7 +991,7 @@ struct YouTubeImportView: View {
         browserError = ""
         importedSong = nil
         reviewTitle = ""
-        step = .download
+        moveToStep(.download)
 
         let requestedTitle = MusicFormatters.clean(
             model.importTitle.isEmpty ? preview.title : model.importTitle,
@@ -1022,7 +1017,12 @@ struct YouTubeImportView: View {
         if reviewTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             reviewTitle = song.title
         }
-        step = .review
+        moveToStep(.review)
+    }
+
+    private func moveToStep(_ nextStep: YouTubeImportStep) {
+        stepDirection = nextStep.rawValue >= step.rawValue ? 1 : -1
+        step = nextStep
     }
 
     private func confirmImportedSong() {
@@ -1143,17 +1143,7 @@ private struct YouTubeGlassPanel<Content: View>: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(.ultraThinMaterial)
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.075),
-                            Color.white.opacity(0.018),
-                            Color.black.opacity(0.12)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(Color.white.opacity(0.035))
         }
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -1169,6 +1159,41 @@ private struct YouTubeGlassPanel<Content: View>: View {
                     ),
                     lineWidth: 1
                 )
+        }
+    }
+}
+
+private enum ImportFlowPillKind {
+    case primary
+    case secondary
+}
+
+private struct ImportFlowPillButtonStyle: ButtonStyle {
+    var kind: ImportFlowPillKind
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(MusicTypography.fixed(14, weight: .semibold))
+            .foregroundStyle(.white.opacity(isEnabled ? 0.96 : 0.42))
+            .padding(.horizontal, 18)
+            .frame(height: 44)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(background.opacity(isEnabled ? 1 : 0.42))
+                Capsule(style: .continuous)
+                    .stroke(.white.opacity(kind == .primary ? 0.05 : 0.12), lineWidth: 1)
+            }
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.snappy(duration: 0.12), value: configuration.isPressed)
+    }
+
+    private var background: Color {
+        switch kind {
+        case .primary:
+            return .red
+        case .secondary:
+            return Color.white.opacity(0.11)
         }
     }
 }

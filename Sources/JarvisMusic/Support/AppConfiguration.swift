@@ -30,6 +30,10 @@ enum AppConfiguration {
         applicationSupportURL.appendingPathComponent("Artwork", isDirectory: true)
     }
 
+    static var recycleBinURL: URL {
+        applicationSupportURL.appendingPathComponent("Recycle Bin", isDirectory: true)
+    }
+
     static var tokenURL: URL {
         applicationSupportURL.appendingPathComponent("control-token.txt")
     }

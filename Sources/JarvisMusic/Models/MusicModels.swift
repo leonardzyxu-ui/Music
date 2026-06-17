@@ -3,6 +3,7 @@ import Foundation
 enum LibrarySelection: Hashable, Codable {
     case allSongs
     case smartPicker
+    case recycleBin
     case group(String)
     case youtube
 
@@ -12,6 +13,8 @@ enum LibrarySelection: Hashable, Codable {
             return "All Songs"
         case .smartPicker:
             return "Your Pick"
+        case .recycleBin:
+            return "Recycle Bin"
         case .group(let name):
             return name
         case .youtube:
@@ -61,6 +64,7 @@ struct ListeningStats: Codable, Hashable {
     var lastCompletedAt: Date?
     var lastManualSelectionAt: Date?
     var rankScore: Double = 0
+    var smartPickerRankOverride: Double?
 }
 
 struct ListeningEvent: Codable, Hashable {
@@ -89,6 +93,7 @@ struct LibraryDatabase: Codable {
     var events: [ListeningEvent] = []
     var smartRankingSongIDs: [String] = []
     var explicitGroups: [String] = []
+    var trashedSongs: [Song]?
     var lastSmartPickerRefreshAt: Date?
 }
 
