@@ -79,7 +79,7 @@
 <body>
   <main>
     <section class="hero">
-      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 02:03 CST</p>
+      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 02:33 CST</p>
       <h1>Music Overnight Report</h1>
       <p>Native macOS Music app checkpoint for Leo. This report is a living morning handoff and will be finalized before 6:30 AM Beijing time.</p>
     </section>
@@ -122,6 +122,7 @@
           <li><span class="ok">Passed</span>: <code>python3 -m py_compile script/jarvis_music_bridge.py script/test_bridge_contract.py</code></li>
           <li><span class="ok">Passed</span>: <code>python3 script/test_bridge_contract.py</code>, including the new player-presentation contract.</li>
           <li><span class="ok">Passed</span>: <code>git diff --check</code></li>
+          <li><span class="ok">Repeated</span>: the same safe verification pass was rerun at 02:33 CST and stayed green except for the known screenshot capture limitation.</li>
           <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
           <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
           <li><span class="warn">Investigated</span>: Computer Use sees the installed <code>dist/Music.app</code>, but cannot attach to its custom window and returns <code>cgWindowNotFound</code>.</li>
