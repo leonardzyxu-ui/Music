@@ -12,6 +12,10 @@ instead of interrupting the current task or trusting memory.
 
 - None.
 
+## Protected UI Rules
+
+- Keep the normal Play Bar Liquid Glass neutral. Do not recolor, tint, or gradient the Play Bar surface from the current song artwork, thumbnail, logo, or dominant album colors. Artwork-derived color is only allowed in song-focus/fullscreen presentation backgrounds.
+
 ## Completed
 
 - Add an explicit persistent queue file for Leo's sudden ideas and non-interrupting feature requests.
