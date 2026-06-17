@@ -22,8 +22,8 @@ struct NowPlayingBar: View {
             let expanded = isScrubberHovering && playback.duration > 0
             let contentPadding = compact ? CGFloat(16) : CGFloat(18)
             let itemSpacing = compact ? CGFloat(14) : CGFloat(16)
-            let leftWidth = compact ? CGFloat(150) : CGFloat(226)
-            let rightWidth = compact ? CGFloat(0) : CGFloat(124)
+            let leftWidth = compact ? CGFloat(150) : CGFloat(238)
+            let rightWidth = compact ? CGFloat(0) : CGFloat(142)
             let spacingBudget = compact ? itemSpacing : itemSpacing * 2
             let availableCenter = barWidth - contentPadding * 2 - leftWidth - rightWidth - spacingBudget
             let centerWidth = max(compact ? CGFloat(112) : CGFloat(178), availableCenter)
@@ -49,21 +49,22 @@ struct NowPlayingBar: View {
                     .padding(.horizontal, contentPadding)
                     .background {
                         Capsule(style: .continuous)
-                            .fill(Color.black.opacity(expanded ? 0.025 : 0.012))
+                            .fill(Color.black.opacity(expanded ? 0.016 : 0.008))
                         Capsule(style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(expanded ? 0.055 : 0.035),
+                                        nowPlayingTint.opacity(expanded ? 0.30 : 0.20),
+                                        Color.white.opacity(expanded ? 0.045 : 0.028),
                                         Color.clear,
-                                        Color.black.opacity(expanded ? 0.045 : 0.025)
+                                        Color.black.opacity(expanded ? 0.038 : 0.020)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                     }
-                    .modifier(NowPlayingGlassSurface())
+                    .modifier(NowPlayingGlassSurface(tint: nowPlayingTint))
                     .overlay { capsuleLighting(expanded: expanded) }
                     .shadow(color: .black.opacity(0.22), radius: expanded ? 17 : 13, y: expanded ? 7 : 5)
                     .compositingGroup()
@@ -79,74 +80,79 @@ struct NowPlayingBar: View {
 
     private func transportControls(includeModes: Bool) -> some View {
         let hasSong = playback.currentSong != nil
-        let activeColor = Color.white
-        let idleColor = Color.secondary.opacity(0.34)
-        return HStack(spacing: includeModes ? 16 : 13) {
+        return HStack(spacing: includeModes ? 7 : 13) {
             if includeModes {
                 Button {
                     playback.shuffle.toggle()
                 } label: {
                     Image(systemName: "shuffle")
-                        .font(MusicTypography.fixed(18, weight: .semibold))
-                        .frame(width: 34, height: 34)
+                        .font(MusicTypography.fixed(22, weight: .semibold))
+                        .frame(width: 40, height: 40)
                         .contentShape(Circle())
                 }
-                .foregroundStyle(hasSong ? activeColor : idleColor)
+                .foregroundStyle(transportColor(hasSong: hasSong, isActive: playback.shuffle))
                 .buttonStyle(.plain)
                 .help("Shuffle")
                 .disabled(!hasSong)
             }
 
-            Button { playback.previous() } label: {
-                Image(systemName: "backward.fill")
-                    .frame(width: 34, height: 34)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .font(.title2)
-            .foregroundStyle(hasSong ? activeColor : idleColor)
-            .help("Previous")
-            .disabled(!hasSong)
+            HStack(spacing: 14) {
+                Button { playback.previous() } label: {
+                    Image(systemName: "backward.fill")
+                        .frame(width: 38, height: 40)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .font(.title2)
+                .foregroundStyle(transportColor(hasSong: hasSong))
+                .help("Previous")
+                .disabled(!hasSong)
 
-            Button {
-                playback.isPlaying ? playback.pause() : playback.resume()
-            } label: {
-                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                    .font(MusicTypography.fixed(27, weight: .semibold))
-                    .frame(width: 40, height: 38)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(hasSong ? activeColor : idleColor)
-            .help(playback.isPlaying ? "Pause" : "Play")
-            .disabled(!hasSong)
+                Button {
+                    playback.isPlaying ? playback.pause() : playback.resume()
+                } label: {
+                    Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                        .font(MusicTypography.fixed(29, weight: .semibold))
+                        .frame(width: 44, height: 40)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(transportColor(hasSong: hasSong))
+                .help(playback.isPlaying ? "Pause" : "Play")
+                .disabled(!hasSong)
 
-            Button { playback.next() } label: {
-                Image(systemName: "forward.fill")
-                    .frame(width: 34, height: 34)
-                    .contentShape(Circle())
+                Button { playback.next() } label: {
+                    Image(systemName: "forward.fill")
+                        .frame(width: 38, height: 40)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .font(.title2)
+                .foregroundStyle(transportColor(hasSong: hasSong))
+                .help("Next")
+                .disabled(!hasSong)
             }
-            .buttonStyle(.plain)
-            .font(.title2)
-            .foregroundStyle(hasSong ? activeColor : idleColor)
-            .help("Next")
-            .disabled(!hasSong)
 
             if includeModes {
                 Button {
                     playback.repeatMode = (playback.repeatMode + 1) % 3
                 } label: {
                     Image(systemName: playback.repeatMode == 2 ? "repeat.1" : "repeat")
-                        .font(MusicTypography.fixed(18, weight: .semibold))
-                        .frame(width: 34, height: 34)
+                        .font(MusicTypography.fixed(22, weight: .semibold))
+                        .frame(width: 40, height: 40)
                         .contentShape(Circle())
                 }
-                .foregroundStyle(hasSong ? activeColor : idleColor)
+                .foregroundStyle(transportColor(hasSong: hasSong, isActive: playback.repeatMode > 0))
                 .buttonStyle(.plain)
                 .help("Repeat")
                 .disabled(!hasSong)
             }
         }
+    }
+
+    private func transportColor(hasSong: Bool, isActive: Bool = false) -> Color {
+        guard hasSong else { return Color.secondary.opacity(0.34) }
+        return isActive ? .red : .white
     }
 
     private func centerScrubber(width: CGFloat, expanded: Bool) -> some View {
@@ -255,7 +261,7 @@ struct NowPlayingBar: View {
                             library.rename(song: song, to: title)
                         }
                     }
-                    Menu("Move to Group") {
+                    Section("Move to Group") {
                         Button("All Songs") {
                             moveNowPlayingSong(song, to: "All Songs")
                         }
@@ -286,10 +292,12 @@ struct NowPlayingBar: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .frame(width: 30, height: 30)
+                    .font(MusicTypography.fixed(22, weight: .semibold))
+                    .frame(width: 40, height: 40)
                     .contentShape(Circle())
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .help("More")
 
             Menu {
@@ -308,22 +316,25 @@ struct NowPlayingBar: View {
                 }
             } label: {
                 Image(systemName: "list.bullet")
-                    .frame(width: 30, height: 30)
+                    .font(MusicTypography.fixed(22, weight: .semibold))
+                    .frame(width: 40, height: 40)
                     .contentShape(Circle())
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .help("Queue")
 
             Button {
                 playback.setVolume(playback.volume > 0 ? 0 : 0.9)
             } label: {
                 Image(systemName: playback.volume > 0 ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                    .frame(width: 30, height: 30)
+                    .font(MusicTypography.fixed(22, weight: .semibold))
+                    .frame(width: 40, height: 40)
                     .contentShape(Circle())
             }
             .help("Mute")
         }
-        .font(.title3)
+        .font(MusicTypography.fixed(21, weight: .semibold))
         .foregroundStyle(.primary.opacity(0.74))
         .buttonStyle(.plain)
     }
@@ -334,6 +345,10 @@ struct NowPlayingBar: View {
             let nsImage = NSImage(contentsOf: url)
         else { return nil }
         return Image(nsImage: nsImage)
+    }
+
+    private var nowPlayingTint: Color {
+        Color.white.opacity(0.10)
     }
 
     private var remainingText: String {
@@ -443,10 +458,12 @@ private struct FlatScrubBar: View {
 }
 
 private struct NowPlayingGlassSurface: ViewModifier {
+    var tint: Color
+
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
             content
-                .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+                .glassEffect(.regular.tint(tint).interactive(), in: Capsule(style: .continuous))
         } else {
             content
                 .background {

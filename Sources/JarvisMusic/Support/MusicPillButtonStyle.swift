@@ -22,6 +22,36 @@ struct MusicPillButtonModifier: ViewModifier {
     func body(content: Content) -> some View {
         switch kind {
         case .primary:
+            primaryButton(content)
+        case .secondary:
+            content
+                .font(MusicTypography.fixed(14, weight: .semibold))
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .controlSize(controlSize)
+                .tint(secondaryTint)
+        }
+    }
+
+    @ViewBuilder
+    private func primaryButton(_ content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content
+                .font(MusicTypography.fixed(14, weight: .semibold))
+                .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.58))
+                .buttonStyle(.plain)
+                .padding(.horizontal, horizontalPadding)
+                .frame(height: height)
+                .glassEffect(
+                    .regular.tint(primaryTint).interactive(),
+                    in: Capsule(style: .continuous)
+                )
+                .overlay {
+                    primarySpecularEdge
+                }
+                .shadow(color: Color.red.opacity(isEnabled ? 0.18 : 0), radius: 9, x: -2, y: 3)
+                .contentShape(Capsule(style: .continuous))
+        } else {
             content
                 .font(MusicTypography.fixed(14, weight: .semibold))
                 .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.58))
@@ -30,22 +60,11 @@ struct MusicPillButtonModifier: ViewModifier {
                 .frame(height: height)
                 .background {
                     Capsule(style: .continuous)
-                        .fill(primaryBase)
-                    Capsule(style: .continuous)
-                        .fill(primaryLighting)
-                        .blendMode(.screen)
-                    Capsule(style: .continuous)
-                        .strokeBorder(Color.white.opacity(isEnabled ? 0.17 : 0.07), lineWidth: 1)
+                        .fill(primaryTint)
+                    primarySpecularEdge
                 }
-                .shadow(color: Color.red.opacity(isEnabled ? 0.22 : 0), radius: 10, x: -2, y: 3)
+                .shadow(color: Color.red.opacity(isEnabled ? 0.18 : 0), radius: 9, x: -2, y: 3)
                 .contentShape(Capsule(style: .continuous))
-        case .secondary:
-            content
-                .font(MusicTypography.fixed(14, weight: .semibold))
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .controlSize(controlSize)
-                .tint(secondaryTint)
         }
     }
 
@@ -59,21 +78,25 @@ struct MusicPillButtonModifier: ViewModifier {
         return .large
     }
 
-    private var primaryBase: Color {
-        Color(red: 1.0, green: 0.18, blue: 0.22).opacity(isEnabled ? 1 : 0.48)
+    private var primaryTint: Color {
+        Color(red: 1.0, green: 0.13, blue: 0.18).opacity(isEnabled ? 0.82 : 0.32)
     }
 
-    private var primaryLighting: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: Color.white.opacity(isEnabled ? 0.32 : 0.12), location: 0),
-                .init(color: Color.white.opacity(isEnabled ? 0.10 : 0.04), location: 0.42),
-                .init(color: Color.clear, location: 0.58),
-                .init(color: Color.black.opacity(isEnabled ? 0.18 : 0.10), location: 1)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+    private var primarySpecularEdge: some View {
+        Capsule(style: .continuous)
+            .strokeBorder(
+                LinearGradient(
+                    stops: [
+                        .init(color: Color.white.opacity(isEnabled ? 0.34 : 0.10), location: 0),
+                        .init(color: Color.white.opacity(isEnabled ? 0.10 : 0.04), location: 0.28),
+                        .init(color: Color.clear, location: 0.56),
+                        .init(color: Color.black.opacity(isEnabled ? 0.18 : 0.09), location: 1)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 1
+            )
     }
 
     private var secondaryTint: Color {

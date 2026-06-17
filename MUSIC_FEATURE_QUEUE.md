@@ -6,7 +6,8 @@ instead of interrupting the current task or trusting memory.
 
 ## Active
 
-- None.
+- Add Apple Music-style song focus mode: hovering current song artwork shows a darkened artwork overlay with an expand arrow, clicking opens a full-window song-only view with album-color blur, close and compact-player glass controls, no lyrics panel, and playback controls.
+- Add Apple Music-style compact player mode from song focus: shrink the whole Music window into a small rounded player with artwork/title/progress/transport controls, and reveal secondary controls on hover.
 
 ## Parked Ideas
 
@@ -50,3 +51,9 @@ instead of interrupting the current task or trusting memory.
 - Restore primary-only red Capsule Action Button lighting because native `.borderedProminent` tint rendered too flat, while keeping neutral capsule buttons flat/native.
 - Keep selected/current song row separators visible and tint the selected row's top and bottom separators red.
 - Reduce sidebar navigation perceived lag by selecting rows on mouse-down instead of waiting for mouse-up.
+- Make right-side now-playing Icon-Only Controls match the larger visual size and hit area of the left-side loop/shuffle/repeat controls.
+- Incorporate neutral real tint/material-lighting into the Play Bar without using song artwork colors.
+- When shuffle/repeat/loop modes are active from any loop button, tint the active loop control red so the state is obvious.
+- Move the left and right loop controls closer to the three-button transport cluster, roughly halving the gap on each side, while preserving the relative spacing among previous/play/next.
+- Remove the small chevron marks next to the now-playing ellipsis and list buttons.
+- Fix the now-playing ellipsis menu's `Move to Group` submenu flickering by flattening move targets into the main menu section.
