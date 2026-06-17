@@ -22,6 +22,12 @@ Examples:
 - Play Bar more, queue, and volume buttons.
 - Small row-only utility icons when they are intentionally icon-only.
 
+Play Bar glass rule:
+
+- Keep the Play Bar's Liquid Glass neutral and Apple-like.
+- Do not tint the Play Bar surface from the current song artwork/logo colors.
+- Artwork colors may inform song-focus backgrounds, but not the normal Play Bar.
+
 ## Sidebar Navigation Rows
 
 The left sidebar rows Leo originally called menu bar buttons.
