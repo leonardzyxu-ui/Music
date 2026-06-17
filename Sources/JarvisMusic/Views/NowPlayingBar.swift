@@ -22,11 +22,11 @@ struct NowPlayingBar: View {
             let expanded = isScrubberHovering && playback.duration > 0
             let contentPadding = compact ? CGFloat(16) : CGFloat(18)
             let itemSpacing = compact ? CGFloat(14) : CGFloat(16)
-            let leftWidth = compact ? CGFloat(132) : CGFloat(176)
+            let leftWidth = compact ? CGFloat(150) : CGFloat(226)
             let rightWidth = compact ? CGFloat(0) : CGFloat(124)
             let spacingBudget = compact ? itemSpacing : itemSpacing * 2
             let availableCenter = barWidth - contentPadding * 2 - leftWidth - rightWidth - spacingBudget
-            let centerWidth = max(compact ? CGFloat(124) : CGFloat(190), availableCenter)
+            let centerWidth = max(compact ? CGFloat(112) : CGFloat(178), availableCenter)
             let barHeight = CGFloat(50)
 
             VStack(spacing: 0) {
@@ -79,16 +79,19 @@ struct NowPlayingBar: View {
 
     private func transportControls(includeModes: Bool) -> some View {
         let hasSong = playback.currentSong != nil
-        return HStack(spacing: includeModes ? 14 : 13) {
+        let activeColor = Color.white
+        let idleColor = Color.secondary.opacity(0.34)
+        return HStack(spacing: includeModes ? 16 : 13) {
             if includeModes {
                 Button {
                     playback.shuffle.toggle()
                 } label: {
                     Image(systemName: "shuffle")
-                        .frame(width: 28, height: 28)
+                        .font(MusicTypography.fixed(18, weight: .semibold))
+                        .frame(width: 34, height: 34)
                         .contentShape(Circle())
                 }
-                .foregroundStyle(hasSong ? (playback.shuffle ? Color.red : Color.secondary) : Color.secondary.opacity(0.34))
+                .foregroundStyle(hasSong ? activeColor : idleColor)
                 .buttonStyle(.plain)
                 .help("Shuffle")
                 .disabled(!hasSong)
@@ -96,12 +99,12 @@ struct NowPlayingBar: View {
 
             Button { playback.previous() } label: {
                 Image(systemName: "backward.fill")
-                    .frame(width: 32, height: 32)
+                    .frame(width: 34, height: 34)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .font(.title2)
-            .foregroundStyle(hasSong ? Color.secondary : Color.secondary.opacity(0.34))
+            .foregroundStyle(hasSong ? activeColor : idleColor)
             .help("Previous")
             .disabled(!hasSong)
 
@@ -114,18 +117,18 @@ struct NowPlayingBar: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(hasSong ? Color.primary : Color.secondary.opacity(0.34))
+            .foregroundStyle(hasSong ? activeColor : idleColor)
             .help(playback.isPlaying ? "Pause" : "Play")
             .disabled(!hasSong)
 
             Button { playback.next() } label: {
                 Image(systemName: "forward.fill")
-                    .frame(width: 32, height: 32)
+                    .frame(width: 34, height: 34)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .font(.title2)
-            .foregroundStyle(hasSong ? Color.secondary : Color.secondary.opacity(0.34))
+            .foregroundStyle(hasSong ? activeColor : idleColor)
             .help("Next")
             .disabled(!hasSong)
 
@@ -134,10 +137,11 @@ struct NowPlayingBar: View {
                     playback.repeatMode = (playback.repeatMode + 1) % 3
                 } label: {
                     Image(systemName: playback.repeatMode == 2 ? "repeat.1" : "repeat")
-                        .frame(width: 28, height: 28)
+                        .font(MusicTypography.fixed(18, weight: .semibold))
+                        .frame(width: 34, height: 34)
                         .contentShape(Circle())
                 }
-                .foregroundStyle(hasSong ? (playback.repeatMode == 0 ? Color.secondary : Color.red) : Color.secondary.opacity(0.34))
+                .foregroundStyle(hasSong ? activeColor : idleColor)
                 .buttonStyle(.plain)
                 .help("Repeat")
                 .disabled(!hasSong)
@@ -253,17 +257,17 @@ struct NowPlayingBar: View {
                     }
                     Menu("Move to Group") {
                         Button("All Songs") {
-                            library.move(song: song, to: "All Songs")
+                            moveNowPlayingSong(song, to: "All Songs")
                         }
                         ForEach(library.groups, id: \.self) { group in
                             Button(group) {
-                                library.move(song: song, to: group)
+                                moveNowPlayingSong(song, to: group)
                             }
                         }
                         Divider()
                         Button("New Group...") {
                             if let group = Prompt.text(title: "Move to New Group", message: "Enter a group name:") {
-                                library.move(song: song, to: group)
+                                moveNowPlayingSong(song, to: group)
                             }
                         }
                     }
@@ -336,6 +340,23 @@ struct NowPlayingBar: View {
         guard playback.duration.isFinite, playback.duration > 0 else { return "--:--" }
         let remaining = max(0, playback.duration - playback.currentTime)
         return "-\(MusicFormatters.duration(remaining))"
+    }
+
+    private func moveNowPlayingSong(_ song: Song, to group: String) {
+        library.move(song: song, to: group)
+        if shouldDemoteFromSmartPicker() {
+            library.removeFromSmartPicker(song)
+        }
+    }
+
+    private func shouldDemoteFromSmartPicker() -> Bool {
+        if library.selection == .smartPicker {
+            return true
+        }
+        if playback.queueSnapshot.source.localizedCaseInsensitiveContains("Your Pick") {
+            return true
+        }
+        return false
     }
 
     private func capsuleLighting(expanded: Bool) -> some View {

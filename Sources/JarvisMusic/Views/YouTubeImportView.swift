@@ -122,8 +122,7 @@ struct YouTubeImportView: View {
             } label: {
                 Label(showBrowser ? "Hide Browser" : "Show Browser", systemImage: showBrowser ? "eye.slash" : "globe")
             }
-            .buttonStyle(.bordered)
-            .tint(.white.opacity(0.34))
+            .buttonStyle(MusicPillButtonStyle(.secondary, height: 38, horizontalPadding: 15))
         }
     }
 
@@ -185,7 +184,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Next", systemImage: "arrow.right")
                     }
-                    .buttonStyle(ImportFlowPillButtonStyle(kind: .primary))
+                    .buttonStyle(MusicPillButtonStyle(.primary))
                     .disabled(!canContinueFromSearch)
                 }
 
@@ -241,7 +240,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Back", systemImage: "arrow.left")
                     }
-                    .buttonStyle(ImportFlowPillButtonStyle(kind: .secondary))
+                    .buttonStyle(MusicPillButtonStyle(.secondary))
                     .disabled(model.isImporting)
 
                     Spacer()
@@ -251,7 +250,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Next", systemImage: "arrow.right")
                     }
-                    .buttonStyle(ImportFlowPillButtonStyle(kind: .primary))
+                    .buttonStyle(MusicPillButtonStyle(.primary))
                     .disabled(importedSong == nil || model.isImporting)
                 }
             }
@@ -291,7 +290,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Back", systemImage: "arrow.left")
                     }
-                    .buttonStyle(ImportFlowPillButtonStyle(kind: .secondary))
+                    .buttonStyle(MusicPillButtonStyle(.secondary))
 
                     Spacer()
 
@@ -300,7 +299,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Confirm", systemImage: "checkmark")
                     }
-                    .buttonStyle(ImportFlowPillButtonStyle(kind: .primary))
+                    .buttonStyle(MusicPillButtonStyle(.primary))
                     .disabled(!canConfirmReview)
                 }
             }
@@ -354,13 +353,8 @@ struct YouTubeImportView: View {
                 prepareDirectURL()
             } label: {
                 Text("Use")
-                    .font(MusicTypography.fixed(12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.red, in: Capsule(style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(MusicPillButtonStyle(.primary, height: 32, horizontalPadding: 13))
             .disabled(directURLDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isImporting)
         }
         .padding(.horizontal, 12)
@@ -624,7 +618,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Read Title", systemImage: "text.magnifyingglass")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(MusicPillButtonStyle(.secondary))
                     .disabled(selectedPreview == nil || model.isImporting)
 
                     Button {
@@ -636,7 +630,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Open Original", systemImage: "globe")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(MusicPillButtonStyle(.secondary))
                     .disabled(selectedPreview == nil)
 
                     Spacer()
@@ -646,8 +640,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label(model.isImporting ? "Importing" : "Import MP3", systemImage: "square.and.arrow.down")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(canImportSelected ? .red : .gray)
+                    .buttonStyle(MusicPillButtonStyle(.primary))
                     .disabled(!canImportSelected || model.isImporting)
                 }
                 .controlSize(.large)
@@ -791,7 +784,7 @@ struct YouTubeImportView: View {
                     } label: {
                         Label("Reload", systemImage: "arrow.clockwise")
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(MusicPillButtonStyle(.secondary, height: 34, horizontalPadding: 12))
                     Button {
                         showBrowser = false
                     } label: {
@@ -1159,41 +1152,6 @@ private struct YouTubeGlassPanel<Content: View>: View {
                     ),
                     lineWidth: 1
                 )
-        }
-    }
-}
-
-private enum ImportFlowPillKind {
-    case primary
-    case secondary
-}
-
-private struct ImportFlowPillButtonStyle: ButtonStyle {
-    var kind: ImportFlowPillKind
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(MusicTypography.fixed(14, weight: .semibold))
-            .foregroundStyle(.white.opacity(isEnabled ? 0.96 : 0.42))
-            .padding(.horizontal, 18)
-            .frame(height: 44)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(background.opacity(isEnabled ? 1 : 0.42))
-                Capsule(style: .continuous)
-                    .stroke(.white.opacity(kind == .primary ? 0.05 : 0.12), lineWidth: 1)
-            }
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.snappy(duration: 0.12), value: configuration.isPressed)
-    }
-
-    private var background: Color {
-        switch kind {
-        case .primary:
-            return .red
-        case .secondary:
-            return Color.white.opacity(0.11)
         }
     }
 }

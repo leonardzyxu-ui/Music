@@ -131,14 +131,13 @@ private struct NewPlaylistGlassDialog: View {
             HStack(spacing: 10) {
                 Spacer()
                 Button("Cancel", action: cancel)
+                    .buttonStyle(MusicPillButtonStyle(.secondary))
                     .keyboardShortcut(.cancelAction)
                 Button("Create", action: create)
                     .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .buttonStyle(MusicPillButtonStyle(.primary))
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .controlSize(.large)
         }
         .padding(22)
         .background {

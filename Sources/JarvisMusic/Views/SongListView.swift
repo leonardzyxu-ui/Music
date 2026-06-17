@@ -90,8 +90,7 @@ struct SongListView: View {
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
+                .buttonStyle(MusicPillButtonStyle(.secondary))
                 .help("Refresh Your Pick")
             }
             if compact {
@@ -100,9 +99,7 @@ struct SongListView: View {
                 } label: {
                     Image(systemName: "play.fill")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.red)
+                .buttonStyle(MusicPillButtonStyle(.primary))
                 .disabled(library.visibleSongs().isEmpty)
             } else {
                 Button {
@@ -110,9 +107,7 @@ struct SongListView: View {
                 } label: {
                     Label("Play", systemImage: "play.fill")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.red)
+                .buttonStyle(MusicPillButtonStyle(.primary))
                 .disabled(library.visibleSongs().isEmpty)
             }
         }
@@ -124,10 +119,12 @@ struct SongListView: View {
     private func songRow(_ song: Song, showGroup: Bool, showDuration: Bool) -> some View {
         let isSmartPicker = library.selection == .smartPicker
         let isRecycleBin = library.selection == .recycleBin
+        let isHighlighted = songIsHighlighted(song)
         return SongRow(
             song: song,
             isCurrent: playback.currentSong?.id == song.id,
             isPlaying: playback.isPlaying && playback.currentSong?.id == song.id,
+            isHighlighted: isHighlighted,
             groups: library.groups,
             showGroup: showGroup,
             showDuration: showDuration,
@@ -137,6 +134,9 @@ struct SongListView: View {
             },
             moveToGroup: { group in
                 library.move(song: song, to: group)
+                if isSmartPicker {
+                    library.removeFromSmartPicker(song)
+                }
             },
             removeFromSmartPicker: isSmartPicker ? {
                 library.removeFromSmartPicker(song)
@@ -157,6 +157,10 @@ struct SongListView: View {
                 model.openOriginalVideo(for: song)
             }
         )
+    }
+
+    private func songIsHighlighted(_ song: Song) -> Bool {
+        library.selectedSongIDs.contains(song.id) || playback.currentSong?.id == song.id
     }
 
     private func playVisible() {
@@ -182,6 +186,7 @@ struct SongRow: View {
     var song: Song
     var isCurrent: Bool
     var isPlaying: Bool
+    var isHighlighted: Bool
     var groups: [String]
     var showGroup: Bool
     var showDuration: Bool
@@ -196,7 +201,7 @@ struct SongRow: View {
         HStack(spacing: 14) {
             ArtworkView(song: song, size: 46)
                 .overlay {
-                    if isCurrent {
+                    if isCurrent && !isHighlighted {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(.red.opacity(0.7), lineWidth: 2)
                     }
@@ -213,7 +218,7 @@ struct SongRow: View {
                     }
                 }
                 Text(song.artist)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isHighlighted ? .red.opacity(0.78) : .secondary)
                     .lineLimit(1)
                     .font(MusicTypography.songSubtitle)
             }
@@ -225,6 +230,7 @@ struct SongRow: View {
                         Image(systemName: "play.rectangle")
                     }
                     .buttonStyle(.borderless)
+                    .foregroundStyle(isHighlighted ? .red : .secondary)
                     .help("Open Original Video")
                 } else {
                     Color.clear
@@ -234,13 +240,13 @@ struct SongRow: View {
 
             if showGroup {
                 Text(song.group)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isHighlighted ? .red.opacity(0.78) : .secondary)
                     .frame(width: 100, alignment: .leading)
                     .lineLimit(1)
             }
             if showDuration {
                 Text(MusicFormatters.duration(song.duration))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isHighlighted ? .red.opacity(0.82) : .secondary)
                     .font(MusicTypography.fixed(14, weight: .medium))
                     .frame(width: 54, alignment: .trailing)
             }
@@ -249,9 +255,10 @@ struct SongRow: View {
                     .font(.title3)
             }
             .buttonStyle(.borderless)
-            .foregroundStyle(isPlaying ? .red : .primary)
+            .foregroundStyle(isHighlighted ? .red : (isPlaying ? .red : .primary))
             .help("Play")
         }
+        .foregroundStyle(isHighlighted ? .red : .primary)
         .contentShape(Rectangle())
         .onTapGesture(perform: play)
         .contextMenu {

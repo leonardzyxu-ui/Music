@@ -37,3 +37,11 @@ instead of interrupting the current task or trusting memory.
 - Restyle New Playlist text input as a Liquid Glass capsule with two semicircle ends.
 - Restyle the YouTube Import panels to avoid the old gray-to-black gradient panel; use cleaner Liquid Glass.
 - Fix New Playlist modal presentation/dismissal jitter by avoiding the background blur transform that caused the app content to jolt.
+- Define shared button terminology: Window Traffic Lights, Icon-Only Controls, Sidebar Navigation Rows, Capsule Action Buttons, and Context Menu Items.
+- Make selected/current song contents turn red without turning the whole row into a full-width red banner.
+- Make `Move to Group` from `Your Pick` actually remove/demote the song from Your Pick after moving it.
+- Fix the repeat/loop button overlapping the hover scrubber area by giving the transport controls more room and shortening the center scrubber budget.
+- Make both shuffle/repeat loop buttons larger and easier to see.
+- Make all left-side now-playing transport buttons pure white when a song is selected, and gray all of them out when no song is selected.
+- Restyle regular non-Play-Bar action buttons as capsule/semicircle-ended buttons instead of rounded rectangles.
+- Add subtle Liquid Glass lighting to regular app buttons, inspired by the App Store `Get` button, while keeping neutral buttons black-ish and primary buttons red.
