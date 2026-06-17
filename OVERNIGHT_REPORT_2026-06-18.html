@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Music Overnight Report - 2026-06-18</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111315;
+      --panel: #1b1d20;
+      --text: #f3f4f6;
+      --muted: #a8abb0;
+      --line: #30343a;
+      --red: #ff3b4f;
+      --green: #36d469;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 0%, #202327 0, var(--bg) 44rem);
+      color: var(--text);
+      font: 16px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    }
+    main {
+      width: min(1060px, calc(100vw - 48px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+    h1, h2 { letter-spacing: 0; line-height: 1.1; }
+    h1 { font-size: clamp(38px, 6vw, 76px); margin: 0 0 10px; }
+    h2 { font-size: 24px; margin: 0 0 14px; }
+    p { color: var(--muted); margin: 0 0 14px; }
+    code {
+      background: #0d0f11;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 2px 6px;
+      color: #fff;
+    }
+    .hero {
+      padding: 34px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow: 0 28px 80px rgba(0,0,0,.36);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .card {
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 20px;
+      background: rgba(255,255,255,.045);
+    }
+    ul { margin: 0; padding-left: 20px; color: var(--muted); }
+    li + li { margin-top: 8px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      font-weight: 700;
+      margin: 4px 6px 4px 0;
+    }
+    .ok { color: var(--green); }
+    .warn { color: #ffd166; }
+    .red { color: var(--red); }
+    a { color: #fff; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 02:03 CST</p>
+      <h1>Music Overnight Report</h1>
+      <p>Native macOS Music app checkpoint for Leo. This report is a living morning handoff and will be finalized before 6:30 AM Beijing time.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>App Path</h2>
+        <p><code>/Users/leoxu/Library/CloudStorage/OneDrive-YKPaoSchool上海民办包玉刚实验学校/developer/Music App</code></p>
+      </article>
+
+      <article class="card">
+        <h2>Protected UI Status</h2>
+        <p>The accepted normal Music UI remains protected. I did not edit the core window-corner styling beyond hardening the accepted AppKit chrome flags so focus/compact mode cannot leave the titlebar in a broken state.</p>
+      </article>
+
+      <article class="card">
+        <h2>Latest Commit</h2>
+        <p><code>ca6ef95</code> - Add Music player focus modes</p>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>What Changed</h2>
+        <ul>
+          <li>Added a song-focus view opened from the current song artwork hover/expand affordance.</li>
+          <li>Added compact player presentation mode with its own window sizing path.</li>
+          <li>Added typed Jarvis bridge actions for getting/setting player presentation mode.</li>
+          <li>Kept the normal Play Bar glass neutral; it does not tint itself from song artwork colors.</li>
+          <li>Centralized accepted window chrome application so mode switches cannot drift away from the protected window style.</li>
+          <li>Cleared the active feature queue for the focus/compact batch.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Verification</h2>
+        <ul>
+          <li><span class="ok">Passed</span>: <code>swift build</code></li>
+          <li><span class="ok">Passed</span>: <code>./script/build_and_run.sh --verify</code></li>
+          <li><span class="ok">Passed</span>: <code>python3 -m py_compile script/jarvis_music_bridge.py script/test_bridge_contract.py</code></li>
+          <li><span class="ok">Passed</span>: <code>python3 script/test_bridge_contract.py</code>, including the new player-presentation contract.</li>
+          <li><span class="ok">Passed</span>: <code>git diff --check</code></li>
+          <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
+          <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Bridge Status</h2>
+        <ul>
+          <li>Bridge URL: <code>http://127.0.0.1:47879</code></li>
+          <li>Current presentation mode: <code>normal</code></li>
+          <li>Song count at report draft: <code>54</code></li>
+          <li>YouTube tools detected: <code>yt-dlp</code> and <code>ffmpeg</code></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Evidence Paths</h2>
+        <ul>
+          <li>Focus-mode preview from the app-window capture: <code>screenshots/focus-mode-preview.png</code></li>
+          <li>Corner audit screenshot path, currently stale because capture is failing: <code>screenshots/window-corner-audit.png</code></li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Known Limitations</h2>
+        <ul>
+          <li>The app-window screenshot path needs repair or replacement; <code>screencapture -l</code> is refusing the Music window even though the bridge and ScreenCaptureKit window enumeration see it.</li>
+          <li>Compact mode has bridge and window-size coverage, but I want stronger screenshot evidence before calling it visually perfect.</li>
+          <li>The optional advertisement website has not started yet because Music itself still deserves the verification time.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Next Actions Before 6:30</h2>
+        <ul>
+          <li>Keep the app in a committed, rollback-safe state.</li>
+          <li>Try to restore reliable app-scoped screenshots without using full-desktop captures.</li>
+          <li>Run another build/bridge pass closer to the final report time.</li>
+          <li>Only start the website if Music remains stable and the report is already complete.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
