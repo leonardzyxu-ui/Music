@@ -28,38 +28,55 @@ struct SongListView: View {
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List(library.visibleSongs(), selection: $library.selectedSongIDs) { song in
-                        SongRow(
-                            song: song,
-                            isCurrent: playback.currentSong?.id == song.id,
-                            isPlaying: playback.isPlaying && playback.currentSong?.id == song.id,
-                            groups: library.groups,
-                            showGroup: showGroup,
-                            showDuration: showDuration,
-                            play: {
-                                library.selectedSongIDs = [song.id]
-                                playback.play(song: song, queue: library.visibleSongs(), source: library.selection?.title ?? "Library", manual: true)
-                            },
-                            moveToGroup: { group in
-                                library.move(song: song, to: group)
-                            },
-                            rename: {
-                                if let title = Prompt.text(title: "Rename Song", message: "Rename '\(song.title)' to:", defaultValue: song.title), !title.isEmpty {
-                                    library.rename(song: song, to: title)
+                    ScrollViewReader { scrollProxy in
+                        List(library.visibleSongs(), selection: $library.selectedSongIDs) { song in
+                            SongRow(
+                                song: song,
+                                isCurrent: playback.currentSong?.id == song.id,
+                                isPlaying: playback.isPlaying && playback.currentSong?.id == song.id,
+                                groups: library.groups,
+                                showGroup: showGroup,
+                                showDuration: showDuration,
+                                play: {
+                                    library.selectedSongIDs = [song.id]
+                                    playback.play(song: song, queue: library.visibleSongs(), source: library.selection?.title ?? "Library", manual: true)
+                                },
+                                moveToGroup: { group in
+                                    library.move(song: song, to: group)
+                                },
+                                rename: {
+                                    if let title = Prompt.text(title: "Rename Song", message: "Rename '\(song.title)' to:", defaultValue: song.title), !title.isEmpty {
+                                        library.rename(song: song, to: title)
+                                    }
+                                },
+                                openOriginal: {
+                                    model.openOriginalVideo(for: song)
                                 }
-                            },
-                            openOriginal: {
-                                model.openOriginalVideo(for: song)
+                            )
+                            .id(song.id)
+                            .listRowInsets(EdgeInsets(top: 5, leading: compact ? 14 : 22, bottom: 5, trailing: compact ? 12 : 22))
+                            .listRowBackground(MusicPalette.contentBlack)
+                            .tag(song.id)
+                        }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            Color.clear.frame(height: 90)
+                        }
+                        .onChange(of: library.selectedSongIDs) { _, ids in
+                            guard let id = ids.first else { return }
+                            withAnimation(.snappy(duration: 0.25)) {
+                                scrollProxy.scrollTo(id, anchor: .center)
                             }
-                        )
-                        .listRowInsets(EdgeInsets(top: 5, leading: compact ? 14 : 22, bottom: 5, trailing: compact ? 12 : 22))
-                        .listRowBackground(MusicPalette.contentBlack)
-                        .tag(song.id)
-                    }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .safeAreaInset(edge: .bottom, spacing: 0) {
-                        Color.clear.frame(height: 90)
+                        }
+                        .onAppear {
+                            guard let id = library.selectedSongIDs.first else { return }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                                withAnimation(.snappy(duration: 0.25)) {
+                                    scrollProxy.scrollTo(id, anchor: .center)
+                                }
+                            }
+                        }
                     }
                 }
             }

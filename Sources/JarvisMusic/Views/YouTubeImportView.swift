@@ -2,8 +2,26 @@ import SwiftUI
 import WebKit
 import AppKit
 
+private enum YouTubeImportStep: Int, CaseIterable, Hashable {
+    case search
+    case download
+    case review
+
+    var title: String {
+        switch self {
+        case .search:
+            return "Choose"
+        case .download:
+            return "Download"
+        case .review:
+            return "Review"
+        }
+    }
+}
+
 struct YouTubeImportView: View {
     @ObservedObject var model: AppModel
+    @State private var step: YouTubeImportStep = .search
     @State private var searchDraft = ""
     @State private var directURLDraft = ""
     @State private var searchResults: [ImportPreview] = []
@@ -12,6 +30,9 @@ struct YouTubeImportView: View {
     @State private var browserIsLoading = false
     @State private var browserProgress = 0.0
     @State private var browserError = ""
+    @State private var importedSong: Song?
+    @State private var reviewTitle = ""
+    @State private var isSearching = false
 
     private var selectedPreview: ImportPreview? {
         if let preview = model.importPreview {
@@ -40,26 +61,26 @@ struct YouTubeImportView: View {
                     .opacity(0.72)
 
                 ScrollView {
-                    VStack(spacing: 18) {
-                        if compact {
-                            VStack(spacing: 16) {
-                                searchPanel
-                                importPanel
-                            }
-                        } else {
-                            HStack(alignment: .top, spacing: 18) {
-                                searchPanel
-                                    .frame(minWidth: 330, idealWidth: 390, maxWidth: 430)
-                                importPanel
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
+                    VStack(spacing: 20) {
+                        stepIndicator
 
                         if showBrowser {
                             browserPanel
                                 .frame(height: 360)
                                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
+
+                        ZStack {
+                            guidedStepContent(compact: compact)
+                                .transition(
+                                    .asymmetric(
+                                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                                        removal: .move(edge: .leading).combined(with: .opacity)
+                                    )
+                                )
+                                .id(step)
+                        }
+                        .animation(.snappy(duration: 0.28), value: step)
                     }
                     .padding(.horizontal, compact ? 22 : 28)
                     .padding(.vertical, 22)
@@ -69,6 +90,13 @@ struct YouTubeImportView: View {
             .background(MusicPalette.contentBlack)
         }
         .onAppear(perform: syncDrafts)
+        .onChange(of: model.importPreview) { _, _ in
+            importedSong = nil
+            reviewTitle = ""
+            if step != .search, !model.isImporting {
+                step = .search
+            }
+        }
         .onChange(of: model.youtubeAddress) { _, newValue in
             directURLDraft = YouTubeImportService.isSupportedImportURL(newValue) ? newValue : directURLDraft
             searchFromAddressIfNeeded(newValue)
@@ -100,6 +128,270 @@ struct YouTubeImportView: View {
             }
             .buttonStyle(.bordered)
             .tint(.white.opacity(0.34))
+        }
+    }
+
+    @ViewBuilder
+    private func guidedStepContent(compact: Bool) -> some View {
+        switch step {
+        case .search:
+            chooseStep
+        case .download:
+            downloadStep
+        case .review:
+            reviewStep
+        }
+    }
+
+    private var stepIndicator: some View {
+        HStack(spacing: 10) {
+            ForEach(YouTubeImportStep.allCases, id: \.self) { item in
+                HStack(spacing: 8) {
+                    Text("\(item.rawValue + 1)")
+                        .font(MusicTypography.fixed(11, weight: .bold))
+                        .foregroundStyle(step.rawValue >= item.rawValue ? .white : .white.opacity(0.42))
+                        .frame(width: 22, height: 22)
+                        .background(step.rawValue >= item.rawValue ? Color.red : Color.white.opacity(0.10), in: Circle())
+                    Text(item.title)
+                        .font(MusicTypography.fixed(12, weight: .semibold))
+                        .foregroundStyle(step == item ? .white : .white.opacity(0.50))
+                }
+
+                if item != YouTubeImportStep.allCases.last {
+                    Capsule(style: .continuous)
+                        .fill(step.rawValue > item.rawValue ? Color.red.opacity(0.75) : Color.white.opacity(0.12))
+                        .frame(height: 2)
+                }
+            }
+        }
+    }
+
+    private var chooseStep: some View {
+        YouTubeGlassPanel {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Label("Find a Video", systemImage: "magnifyingglass")
+                        .font(MusicTypography.fixed(22, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("Search, choose a thumbnail result, then continue.")
+                        .font(MusicTypography.fixed(13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.54))
+                }
+
+                searchField
+                directURLField
+                statusLine
+
+                HStack {
+                    Spacer()
+                    Button {
+                        startDownloadStep()
+                    } label: {
+                        Label("Next", systemImage: "arrow.right")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .tint(canContinueFromSearch ? .red : .gray)
+                    .disabled(!canContinueFromSearch)
+                }
+
+                resultsList
+            }
+        }
+    }
+
+    private var downloadStep: some View {
+        YouTubeGlassPanel {
+            VStack(alignment: .leading, spacing: 22) {
+                HStack(alignment: .top, spacing: 16) {
+                    YouTubeThumbnail(urlStrings: thumbnailURLs(for: selectedPreview), size: 88)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(selectedPreview?.title ?? "Preparing download")
+                            .font(MusicTypography.fixed(24, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                        Text(model.isImporting ? "Music is saving the audio into your shared library." : downloadSummary)
+                            .font(MusicTypography.fixed(13, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.56))
+                    }
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        if model.isImporting {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: importedSong == nil ? progressIcon : "checkmark.circle.fill")
+                                .foregroundStyle(importedSong == nil ? progressColor : .green)
+                        }
+                        Text(model.importStatus)
+                            .font(MusicTypography.fixed(16, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.84))
+                        Spacer()
+                        Text(progressPercentText)
+                            .font(MusicTypography.fixed(15, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.62))
+                            .monospacedDigit()
+                    }
+
+                    FlatProgressBar(value: model.youtubeImportProgressFraction)
+                        .frame(height: 8)
+                }
+
+                permissionNotice
+
+                HStack {
+                    Button {
+                        step = .search
+                    } label: {
+                        Label("Back", systemImage: "arrow.left")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(model.isImporting)
+
+                    Spacer()
+
+                    Button {
+                        moveToReviewStep()
+                    } label: {
+                        Label("Next", systemImage: "arrow.right")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .tint(importedSong == nil || model.isImporting ? .gray : .red)
+                    .disabled(importedSong == nil || model.isImporting)
+                }
+            }
+        }
+    }
+
+    private var reviewStep: some View {
+        YouTubeGlassPanel {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(alignment: .top, spacing: 18) {
+                    YouTubeThumbnail(urlStrings: thumbnailURLs(for: selectedPreview), size: 132)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Name your song")
+                            .font(MusicTypography.fixed(26, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text("This is how it will appear in your library.")
+                            .font(MusicTypography.fixed(13, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.56))
+
+                        TextField("Song name", text: $reviewTitle)
+                            .textFieldStyle(.plain)
+                            .font(MusicTypography.fixed(18, weight: .semibold))
+                            .padding(.horizontal, 14)
+                            .frame(height: 44)
+                            .background {
+                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                    .fill(Color.black.opacity(0.20))
+                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                    .stroke(.white.opacity(0.13), lineWidth: 1)
+                            }
+                    }
+                }
+
+                HStack {
+                    Button {
+                        step = .download
+                    } label: {
+                        Label("Back", systemImage: "arrow.left")
+                    }
+                    .buttonStyle(.bordered)
+
+                    Spacer()
+
+                    Button {
+                        confirmImportedSong()
+                    } label: {
+                        Label("Confirm", systemImage: "checkmark")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .tint(canConfirmReview ? .red : .gray)
+                    .disabled(!canConfirmReview)
+                }
+            }
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "magnifyingglass")
+                .font(MusicTypography.fixed(15, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.56))
+            TextField("Search YouTube", text: $searchDraft)
+                .textFieldStyle(.plain)
+                .font(MusicTypography.fixed(16, weight: .medium))
+                .onSubmit { startSearch() }
+            Button {
+                startSearch()
+            } label: {
+                if isSearching {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "arrow.right")
+                        .font(MusicTypography.fixed(14, weight: .bold))
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.white)
+            .disabled(searchDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isImporting || isSearching)
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 46)
+        .background {
+            Capsule(style: .continuous)
+                .fill(Color.black.opacity(0.22))
+            Capsule(style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 1)
+        }
+    }
+
+    private var directURLField: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "link")
+                .font(MusicTypography.fixed(14, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.50))
+            TextField("Paste YouTube video URL", text: $directURLDraft)
+                .textFieldStyle(.plain)
+                .font(MusicTypography.fixed(13, weight: .medium))
+                .onSubmit { prepareDirectURL() }
+            Button {
+                prepareDirectURL()
+            } label: {
+                Text("Use")
+                    .font(MusicTypography.fixed(12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.red, in: Capsule(style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(directURLDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isImporting)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 38)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.black.opacity(0.16))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(.white.opacity(0.10), lineWidth: 1)
+        }
+    }
+
+    private var statusLine: some View {
+        HStack(spacing: 8) {
+            Image(systemName: statusIcon)
+                .foregroundStyle(statusColor)
+            Text(searchStatus)
+                .font(MusicTypography.fixed(12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.58))
+                .lineLimit(2)
         }
     }
 
@@ -612,6 +904,27 @@ struct YouTubeImportView: View {
         URL(string: model.youtubeCurrentURL)?.host() ?? "youtube.com"
     }
 
+    private var canContinueFromSearch: Bool {
+        guard let preview = selectedPreview else { return false }
+        return YouTubeImportService.isSupportedImportURL(preview.url) && !model.isImporting && !isSearching
+    }
+
+    private var canConfirmReview: Bool {
+        importedSong != nil && !MusicFormatters.clean(reviewTitle, maxLength: 120).isEmpty && !model.isImporting
+    }
+
+    private var downloadSummary: String {
+        if importedSong != nil {
+            return "Download complete. Review the title before saving the library selection."
+        }
+        if model.importStatus.localizedCaseInsensitiveContains("failed")
+            || model.importStatus.localizedCaseInsensitiveContains("not installed")
+            || progressIcon == "exclamationmark.triangle.fill" {
+            return "The import did not finish. Go back, choose another result, or check the helper tools."
+        }
+        return "Music will pull audio, save metadata, refresh the library, and keep the song paused."
+    }
+
     private func syncDrafts() {
         if YouTubeImportService.isSupportedImportURL(model.youtubeCurrentURL) {
             directURLDraft = model.youtubeCurrentURL
@@ -623,6 +936,11 @@ struct YouTubeImportView: View {
         let query = searchDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return }
         showBrowser = false
+        importedSong = nil
+        reviewTitle = ""
+        if step != .search {
+            step = .search
+        }
         Task { await searchYouTube(query) }
     }
 
@@ -672,17 +990,85 @@ struct YouTubeImportView: View {
         _ = await model.importYouTube(url: url, title: model.importTitle)
     }
 
+    private func startDownloadStep() {
+        guard let preview = selectedPreview, let url = URL(string: preview.url) else { return }
+        showBrowser = false
+        browserError = ""
+        importedSong = nil
+        reviewTitle = ""
+        step = .download
+
+        let requestedTitle = MusicFormatters.clean(
+            model.importTitle.isEmpty ? preview.title : model.importTitle,
+            maxLength: 120
+        )
+        model.importTitle = requestedTitle.isEmpty ? preview.title : requestedTitle
+        model.youtubeCurrentURL = preview.url
+        model.youtubeAddress = preview.url
+        model.importStatus = "Preparing audio import..."
+
+        Task {
+            let song = await model.importYouTube(url: url, title: model.importTitle)
+            guard let song else { return }
+            importedSong = song
+            reviewTitle = song.title
+            model.importTitle = song.title
+            model.importStatus = "Download complete. Review the song name."
+        }
+    }
+
+    private func moveToReviewStep() {
+        guard let song = importedSong else { return }
+        if reviewTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            reviewTitle = song.title
+        }
+        step = .review
+    }
+
+    private func confirmImportedSong() {
+        guard let importedSong else { return }
+        let cleanTitle = MusicFormatters.clean(reviewTitle, maxLength: 120)
+        guard !cleanTitle.isEmpty else { return }
+
+        if cleanTitle != importedSong.title {
+            model.library.rename(song: importedSong, to: cleanTitle)
+        }
+
+        let finalSong = model.library.song(id: importedSong.id) ?? {
+            var next = importedSong
+            next.title = cleanTitle
+            next.customTitle = cleanTitle
+            return next
+        }()
+
+        model.library.searchQuery = ""
+        model.library.selection = .allSongs
+        model.library.selectedSongIDs = [finalSong.id]
+        model.playback.cue(
+            song: finalSong,
+            queue: model.library.visibleSongs(),
+            source: "YouTube Import",
+            manual: true
+        )
+        model.importStatus = "Imported \(finalSong.title)."
+        model.noteImportActivity(.success, stage: .finished, title: "Ready in All Songs", detail: finalSong.title)
+    }
+
     private func searchYouTube(_ query: String) async {
+        isSearching = true
+        defer { isSearching = false }
         searchStatus = "Searching YouTube candidates..."
         model.importPreview = nil
         model.importTitle = ""
+        importedSong = nil
+        reviewTitle = ""
         model.importStatus = "Searching YouTube candidates..."
         model.noteImportActivity(.active, stage: nil, title: "Searching YouTube", detail: query)
         do {
             let results = try await model.youtube.search(query: query, limit: 8)
             searchResults = results
-            searchStatus = results.isEmpty ? "No candidates found." : "Choose a video, rename it, then import."
-            model.importStatus = results.isEmpty ? "No candidates found. Try a different search." : "Choose a video, rename it, then import."
+            searchStatus = results.isEmpty ? "No candidates found." : "Choose a video, then click Next."
+            model.importStatus = results.isEmpty ? "No candidates found. Try a different search." : "Choose a video, then click Next."
             let detail = results.isEmpty ? "No import candidates found." : "\(results.count) import candidates ready."
             model.noteImportActivity(.success, stage: nil, title: "YouTube search complete", detail: detail)
         } catch {
@@ -716,6 +1102,9 @@ struct YouTubeImportView: View {
         model.youtubeCurrentURL = preview.url
         model.youtubeAddress = preview.url
         directURLDraft = preview.url
+        importedSong = nil
+        reviewTitle = ""
+        searchStatus = "Selected. Click Next to download audio."
         showBrowser = false
         browserError = ""
         model.noteImportActivity(.info, stage: nil, title: "Video chosen", detail: preview.title)

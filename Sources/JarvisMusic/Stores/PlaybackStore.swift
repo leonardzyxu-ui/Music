@@ -29,6 +29,7 @@ final class PlaybackStore: ObservableObject {
     private var session: PlaybackSession?
     private var repeatStreak = 0
     private var lastSongID: String?
+    private var queuedManualSelection = false
 
     struct PlaybackSession {
         var songID: String
@@ -88,6 +89,23 @@ final class PlaybackStore: ObservableObject {
         playAtIndex(index, manual: manual, finalizeReason: "manual-switch")
     }
 
+    func cue(song: Song, queue songs: [Song], source: String, manual: Bool = true) {
+        finalizeSession(reason: "manual-switch")
+        let baseQueue = songs.isEmpty ? [song] : songs
+        let nextQueue = shuffle ? shuffledQueue(baseQueue, keeping: song) : baseQueue
+        queue = nextQueue
+        queueSnapshot = QueueSnapshot(source: source, songIDs: nextQueue.map(\.id), createdAt: Date())
+        currentIndex = nextQueue.firstIndex(where: { $0.id == song.id }) ?? 0
+        currentSong = song
+        currentTime = 0
+        duration = song.duration
+        queuedManualSelection = manual
+        player.replaceCurrentItem(with: AVPlayerItem(url: song.fileURL))
+        player.pause()
+        isPlaying = false
+        updateNowPlayingInfo()
+    }
+
     func playSmartPicker(from library: LibraryStore) {
         let songs = library.smartSongs
         guard let first = songs.first else { return }
@@ -109,7 +127,8 @@ final class PlaybackStore: ObservableObject {
             return
         }
         if session == nil, let currentSong {
-            beginSession(for: currentSong, manual: false)
+            beginSession(for: currentSong, manual: queuedManualSelection)
+            queuedManualSelection = false
         }
         player.play()
         isPlaying = true
@@ -126,6 +145,7 @@ final class PlaybackStore: ObservableObject {
         currentIndex = -1
         currentTime = 0
         duration = 0
+        queuedManualSelection = false
         isPlaying = false
         updateNowPlayingInfo()
     }
@@ -185,6 +205,7 @@ final class PlaybackStore: ObservableObject {
         currentSong = song
         currentTime = 0
         duration = song.duration
+        queuedManualSelection = false
         let item = AVPlayerItem(url: song.fileURL)
         player.replaceCurrentItem(with: item)
         beginSession(for: song, manual: manual)
