@@ -79,7 +79,7 @@
 <body>
   <main>
     <section class="hero">
-      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 04:26 CST</p>
+      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 04:55 CST</p>
       <h1>Music Overnight Report</h1>
       <p>Native macOS Music app checkpoint for Leo. This report is a living morning handoff and will be finalized before 6:30 AM Beijing time.</p>
     </section>
@@ -98,6 +98,7 @@
       <article class="card">
         <h2>Latest App-Code Commit</h2>
         <p><code>d1d10e1</code> - Expose Music window sharing diagnostics</p>
+        <p>Latest documentation checkpoint: <code>2316bf4</code> - Document neutral Play Bar glass guardrail</p>
         <p>Previous checkpoint: <code>e2e83df</code> - Add honest Music window snapshot diagnostic</p>
         <p>Previous checkpoint: <code>f426913</code> - Document neutral Play Bar glass rule</p>
       </article>
@@ -133,6 +134,8 @@
           <li><span class="ok">Added</span>: <code>POST /diagnostics/window-snapshot</code> now refuses to save a misleading image when offscreen material rendering does not match the live Music window.</li>
           <li><span class="ok">Added</span>: <code>script/final_overnight_check.sh</code> wraps the final build, launch, bridge, window diagnostics, legacy audit, and whitespace checks for the 6:20 AM pass.</li>
           <li><span class="ok">Repeated</span>: <code>script/final_overnight_check.sh</code> passed at 04:26 CST; the legacy screenshot audit still reports the same known capture limitation.</li>
+          <li><span class="ok">Repeated</span>: <code>script/final_overnight_check.sh</code> passed again at 04:54 CST after the neutral Play Bar glass guardrail checkpoint.</li>
+          <li><span class="ok">Passed</span>: live bridge status at 04:55 CST reports normal presentation mode, native traffic lights enabled and visible, <code>54</code> songs, and both YouTube tools available.</li>
           <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
           <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
           <li><span class="warn">Investigated</span>: Computer Use sees the installed <code>dist/Music.app</code>, but cannot attach to its custom window and returns <code>cgWindowNotFound</code>.</li>
@@ -146,6 +149,7 @@
           <li>Bridge URL: <code>http://127.0.0.1:47879</code></li>
           <li>Current presentation mode: <code>normal</code></li>
           <li>Song count at report draft: <code>54</code></li>
+          <li>Window controls: native close/minimize/zoom buttons exist, are visible, and are enabled.</li>
           <li>YouTube tools detected: <code>yt-dlp</code> and <code>ffmpeg</code></li>
         </ul>
       </article>
