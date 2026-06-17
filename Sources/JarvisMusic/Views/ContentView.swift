@@ -15,36 +15,16 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                NavigationSplitView(columnVisibility: $columnVisibility) {
-                    SidebarView(
-                        model: model,
-                        onNewPlaylist: presentNewPlaylistDialog
-                    )
-                    .navigationSplitViewColumnWidth(min: 220, ideal: 236, max: 276)
-                } detail: {
-                    detailContent
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(MusicPalette.contentBlack)
-                        .safeAreaInset(edge: .bottom, spacing: 0) {
-                            Color.clear.frame(height: 90)
-                        }
-                        .overlay(alignment: .bottom) {
-                            NowPlayingBar(model: model)
-                                .padding(.horizontal, 18)
-                        }
+                switch model.playerPresentationMode {
+                case .normal:
+                    libraryShell
+                case .songFocus:
+                    SongFocusView(model: model)
+                        .ignoresSafeArea()
+                case .compact:
+                    CompactPlayerView(model: model)
+                        .ignoresSafeArea()
                 }
-                .navigationSplitViewStyle(.balanced)
-                .frame(minWidth: 1180, minHeight: 760)
-                .background(MusicPalette.spaceBlack)
-                .modifier(
-                    LibrarySearchToolbar(
-                        text: Binding(
-                            get: { library.searchQuery },
-                            set: { library.searchQuery = $0 }
-                        ),
-                        isEnabled: library.selection != .youtube
-                    )
-                )
 
                 if isShowingNewPlaylistDialog {
                     Rectangle()
@@ -65,6 +45,39 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private var libraryShell: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            SidebarView(
+                model: model,
+                onNewPlaylist: presentNewPlaylistDialog
+            )
+            .navigationSplitViewColumnWidth(min: 220, ideal: 236, max: 276)
+        } detail: {
+            detailContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(MusicPalette.contentBlack)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: 90)
+                }
+                .overlay(alignment: .bottom) {
+                    NowPlayingBar(model: model)
+                        .padding(.horizontal, 18)
+                }
+        }
+        .navigationSplitViewStyle(.balanced)
+        .frame(minWidth: 1180, minHeight: 760)
+        .background(MusicPalette.spaceBlack)
+        .modifier(
+            LibrarySearchToolbar(
+                text: Binding(
+                    get: { library.searchQuery },
+                    set: { library.searchQuery = $0 }
+                ),
+                isEnabled: library.selection != .youtube
+            )
+        )
     }
 
     @ViewBuilder
@@ -92,6 +105,352 @@ struct ContentView: View {
         model.library.addGroup(name)
         model.library.selection = .group(name)
         dismissNewPlaylistDialog()
+    }
+}
+
+private struct SongFocusView: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject private var playback: PlaybackStore
+    @State private var controlsHover = false
+
+    init(model: AppModel) {
+        self.model = model
+        self.playback = model.playback
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let song = playback.currentSong
+            ZStack {
+                FocusBackdrop(song: song)
+                    .ignoresSafeArea()
+
+                VStack {
+                    HStack {
+                        HStack(spacing: 0) {
+                            Button {
+                                model.playerPresentationMode = .normal
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(MusicTypography.fixed(22, weight: .medium))
+                                    .frame(width: 54, height: 44)
+                            }
+                            .buttonStyle(.plain)
+
+                            Divider()
+                                .frame(height: 24)
+                                .overlay(Color.white.opacity(0.18))
+
+                            Button {
+                                model.playerPresentationMode = .compact
+                            } label: {
+                                Image(systemName: "rectangle.on.rectangle")
+                                    .font(MusicTypography.fixed(20, weight: .semibold))
+                                    .frame(width: 60, height: 44)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .foregroundStyle(.white.opacity(0.92))
+                        .background {
+                            Capsule(style: .continuous)
+                                .fill(.ultraThinMaterial)
+                            Capsule(style: .continuous)
+                                .fill(Color.white.opacity(0.07))
+                        }
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.top, 18)
+                    .padding(.horizontal, 92)
+
+                    Spacer()
+
+                    HStack(alignment: .bottom, spacing: 58) {
+                        ArtworkView(song: song, size: min(260, max(170, proxy.size.width * 0.22)))
+                            .shadow(color: .black.opacity(0.45), radius: 34, y: 18)
+
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("No Lyrics Available")
+                                .font(MusicTypography.fixed(17, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.88))
+                            Text("There aren't any lyrics available for this song.")
+                                .font(MusicTypography.fixed(14, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.70))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 86)
+                    }
+                    .padding(.horizontal, 120)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(alignment: .firstTextBaseline) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(song?.title ?? "Not Playing")
+                                    .font(MusicTypography.fixed(20, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.94))
+                                    .lineLimit(1)
+                                Text(song?.artist ?? "Choose a song")
+                                    .font(MusicTypography.fixed(15, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.72))
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                        }
+
+                        FocusProgressBar(playback: playback)
+                            .frame(width: min(430, proxy.size.width * 0.36), height: 24)
+
+                        FocusTransportControls(playback: playback, showsSecondary: false)
+                            .frame(width: min(430, proxy.size.width * 0.36))
+                    }
+                    .padding(.leading, 118)
+                    .padding(.bottom, 58)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .onHover { controlsHover = $0 }
+        }
+        .background(MusicPalette.spaceBlack)
+    }
+}
+
+private struct CompactPlayerView: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject private var playback: PlaybackStore
+    @State private var isHovering = false
+
+    init(model: AppModel) {
+        self.model = model
+        self.playback = model.playback
+    }
+
+    var body: some View {
+        ZStack {
+            FocusBackdrop(song: playback.currentSong)
+                .ignoresSafeArea()
+                .opacity(0.76)
+
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    ArtworkView(song: playback.currentSong, size: 54)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(playback.currentSong?.title ?? "Not Playing")
+                            .font(MusicTypography.fixed(17, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.94))
+                            .lineLimit(1)
+                        Text(playback.currentSong?.artist ?? "Choose a song")
+                            .font(MusicTypography.fixed(14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.68))
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    if isHovering {
+                        Button {
+                            model.playerPresentationMode = .normal
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(MusicTypography.fixed(20, weight: .semibold))
+                                .frame(width: 42, height: 42)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.white.opacity(0.92))
+                        .transition(.opacity)
+                    }
+                }
+
+                FocusProgressBar(playback: playback)
+                    .frame(height: 22)
+
+                FocusTransportControls(playback: playback, showsSecondary: true)
+            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 24)
+        }
+        .frame(minWidth: 430, minHeight: 226)
+        .onHover { hovering in
+            withAnimation(.snappy(duration: 0.16)) {
+                isHovering = hovering
+            }
+        }
+    }
+}
+
+private struct FocusBackdrop: View {
+    var song: Song?
+
+    var body: some View {
+        ZStack {
+            if let image = artworkImage {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .blur(radius: 52)
+                    .saturation(1.2)
+                    .opacity(0.72)
+            }
+
+            LinearGradient(
+                colors: [
+                    dominantTint.opacity(0.72),
+                    MusicPalette.spaceBlack.opacity(0.62),
+                    Color.black.opacity(0.70)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .background(MusicPalette.spaceBlack)
+    }
+
+    private var artworkImage: NSImage? {
+        guard let fileName = song?.artworkFileName else { return nil }
+        return NSImage(contentsOf: AppConfiguration.artworkDirectoryURL.appendingPathComponent(fileName))
+    }
+
+    private var dominantTint: Color {
+        guard let image = artworkImage else {
+            return Color(red: 0.34, green: 0.36, blue: 0.38)
+        }
+        return ArtworkDominantColor.color(for: image)
+    }
+}
+
+private struct FocusProgressBar: View {
+    @ObservedObject var playback: PlaybackStore
+
+    var body: some View {
+        VStack(spacing: 5) {
+            GeometryReader { proxy in
+                let fraction = playback.duration > 0 ? min(max(playback.currentTime / playback.duration, 0), 1) : 0
+                ZStack(alignment: .leading) {
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.20))
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.82))
+                        .frame(width: max(0, proxy.size.width * fraction))
+                }
+            }
+            .frame(height: 5)
+
+            HStack {
+                Text(MusicFormatters.duration(playback.currentTime))
+                Spacer()
+                Text(remainingText)
+            }
+            .font(MusicTypography.fixed(11, weight: .medium))
+            .foregroundStyle(.white.opacity(0.64))
+        }
+    }
+
+    private var remainingText: String {
+        guard playback.duration > 0 else { return "--:--" }
+        return "-\(MusicFormatters.duration(max(0, playback.duration - playback.currentTime)))"
+    }
+}
+
+private struct FocusTransportControls: View {
+    @ObservedObject var playback: PlaybackStore
+    var showsSecondary: Bool
+
+    var body: some View {
+        let hasSong = playback.currentSong != nil
+        HStack(spacing: showsSecondary ? 18 : 30) {
+            Button { playback.shuffle.toggle() } label: {
+                Image(systemName: "shuffle")
+                    .font(MusicTypography.fixed(23, weight: .semibold))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(controlColor(hasSong: hasSong, active: playback.shuffle))
+            .disabled(!hasSong)
+
+            Button { playback.previous() } label: {
+                Image(systemName: "backward.fill")
+                    .font(MusicTypography.fixed(30, weight: .semibold))
+                    .frame(width: 50, height: 46)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(controlColor(hasSong: hasSong))
+            .disabled(!hasSong)
+
+            Button { playback.isPlaying ? playback.pause() : playback.resume() } label: {
+                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                    .font(MusicTypography.fixed(38, weight: .semibold))
+                    .frame(width: 64, height: 56)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(controlColor(hasSong: hasSong))
+            .disabled(!hasSong)
+
+            Button { playback.next() } label: {
+                Image(systemName: "forward.fill")
+                    .font(MusicTypography.fixed(30, weight: .semibold))
+                    .frame(width: 50, height: 46)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(controlColor(hasSong: hasSong))
+            .disabled(!hasSong)
+
+            Button { playback.repeatMode = (playback.repeatMode + 1) % 3 } label: {
+                Image(systemName: playback.repeatMode == 2 ? "repeat.1" : "repeat")
+                    .font(MusicTypography.fixed(23, weight: .semibold))
+                    .frame(width: 42, height: 42)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(controlColor(hasSong: hasSong, active: playback.repeatMode > 0))
+            .disabled(!hasSong)
+        }
+        .contentShape(Rectangle())
+    }
+
+    private func controlColor(hasSong: Bool, active: Bool = false) -> Color {
+        guard hasSong else { return Color.white.opacity(0.28) }
+        return active ? .red : Color.white.opacity(0.92)
+    }
+}
+
+private enum ArtworkDominantColor {
+    static func color(for image: NSImage) -> Color {
+        guard
+            let tiff = image.tiffRepresentation,
+            let bitmap = NSBitmapImageRep(data: tiff)
+        else {
+            return Color(red: 0.34, green: 0.36, blue: 0.38)
+        }
+
+        var red = CGFloat(0)
+        var green = CGFloat(0)
+        var blue = CGFloat(0)
+        var count = CGFloat(0)
+        for xIndex in 0..<7 {
+            for yIndex in 0..<7 {
+                let x = min(bitmap.pixelsWide - 1, max(0, bitmap.pixelsWide * xIndex / 7))
+                let y = min(bitmap.pixelsHigh - 1, max(0, bitmap.pixelsHigh * yIndex / 7))
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                red += color.redComponent
+                green += color.greenComponent
+                blue += color.blueComponent
+                count += 1
+            }
+        }
+
+        guard count > 0 else { return Color(red: 0.34, green: 0.36, blue: 0.38) }
+        let color = NSColor(
+            calibratedRed: red / count,
+            green: green / count,
+            blue: blue / count,
+            alpha: 1
+        ).usingColorSpace(.sRGB) ?? .darkGray
+        return Color(
+            red: min(max(color.redComponent * 0.92, 0.22), 0.52),
+            green: min(max(color.greenComponent * 0.92, 0.22), 0.52),
+            blue: min(max(color.blueComponent * 0.92, 0.22), 0.52)
+        )
     }
 }
 

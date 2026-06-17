@@ -6,6 +6,7 @@ struct NowPlayingBar: View {
     @ObservedObject private var playback: PlaybackStore
     @ObservedObject private var library: LibraryStore
     @State private var isScrubberHovering = false
+    @State private var isArtworkHovering = false
 
     init(model: AppModel) {
         self.model = model
@@ -207,8 +208,30 @@ struct NowPlayingBar: View {
     private var trackIdentity: some View {
         HStack(spacing: 9) {
             if playback.currentSong != nil {
-                ArtworkView(song: playback.currentSong, size: 28)
-                    .offset(y: 2)
+                Button {
+                    model.playerPresentationMode = .songFocus
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        ArtworkView(song: playback.currentSong, size: 28)
+                            .brightness(isArtworkHovering ? -0.16 : 0)
+                        if isArtworkHovering {
+                            Image(systemName: "arrow.up.forward")
+                                .font(MusicTypography.fixed(12, weight: .bold))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.45), radius: 2, y: 1)
+                                .padding(2)
+                                .transition(.opacity)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .offset(y: 2)
+                .onHover { hovering in
+                    withAnimation(.snappy(duration: 0.12)) {
+                        isArtworkHovering = hovering
+                    }
+                }
+                .help("Open Song Focus")
             } else if let image = appLogoImage {
                 image
                     .resizable()

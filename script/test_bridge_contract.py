@@ -40,6 +40,8 @@ REQUIRED_ACTIONS = {
     "previous",
     "now-playing",
     "playback-state",
+    "player-presentation-get",
+    "player-presentation-set",
     "volume-get",
     "volume-set",
     "seek",
@@ -78,6 +80,7 @@ def main() -> int:
         ("multi-word-search", lambda: assert_multi_word_search(client.search("Back In Black"))),
         ("smart-picker-refresh", lambda: assert_smart_picker(client.refresh_smart_picker())),
         ("playback-controls", lambda: assert_playback_controls(client)),
+        ("player-presentation", lambda: assert_player_presentation(client)),
         ("volume-roundtrip", lambda: assert_volume_roundtrip(client)),
         ("invalid-youtube-import", lambda: assert_invalid_youtube(client)),
         ("youtube-import-activity", lambda: assert_import_activity(client.youtube_import_activity())),
@@ -285,6 +288,24 @@ def assert_playlist_controls(client: MusicBridgeClient) -> None:
             except Exception:
                 pass
         assert_ok(client.playlist_select("All Songs"))
+
+
+def assert_player_presentation(client: MusicBridgeClient) -> None:
+    original = client.player_presentation()
+    assert_ok(original)
+    if original.get("mode") not in {"normal", "songFocus", "compact"}:
+        raise AssertionError(f"unexpected presentation mode: {original}")
+
+    for requested, expected in [("focus", "songFocus"), ("compact", "compact"), ("normal", "normal")]:
+        updated = client.player_presentation(requested)
+        assert_ok(updated)
+        if updated.get("mode") != expected:
+            raise AssertionError(f"presentation set failed for {requested}: {updated}")
+
+        current = client.player_presentation()
+        assert_ok(current)
+        if current.get("mode") != expected:
+            raise AssertionError(f"presentation get failed for {requested}: {current}")
 
 
 def assert_ranked_search(payload: dict[str, Any]) -> None:

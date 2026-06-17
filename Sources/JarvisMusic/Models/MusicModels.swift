@@ -23,6 +23,25 @@ enum LibrarySelection: Hashable, Codable {
     }
 }
 
+enum PlayerPresentationMode: String, Hashable {
+    case normal
+    case songFocus
+    case compact
+
+    init?(rawBridgeValue: String) {
+        switch rawBridgeValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "normal", "main":
+            self = .normal
+        case "focus", "songfocus", "song-focus", "song_focus":
+            self = .songFocus
+        case "compact", "mini", "mini-player", "miniplayer":
+            self = .compact
+        default:
+            return nil
+        }
+    }
+}
+
 struct Song: Identifiable, Codable, Hashable {
     var id: String
     var title: String

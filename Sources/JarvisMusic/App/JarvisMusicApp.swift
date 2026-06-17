@@ -63,18 +63,85 @@ struct JarvisMusicApp: App {
 
 @MainActor
 enum MusicWindowActions {
+    static let normalMinimumSize = NSSize(width: 1180, height: 760)
+    static let compactSize = NSSize(width: 430, height: 226)
+    static var currentMinimumSize: NSSize {
+        isCompactPresentationActive ? compactSize : normalMinimumSize
+    }
+
+    private static var isCompactPresentationActive = false
+    private static var storedNormalFrame: NSRect?
+
     static func mainWindow() -> NSWindow? {
         NSApp.keyWindow
             ?? NSApp.mainWindow
             ?? NSApp.windows.first { $0.title == AppConfiguration.appName && $0.isVisible }
             ?? NSApp.windows.first { $0.isVisible }
     }
+
+    static func applyPlayerPresentationMode(_ mode: PlayerPresentationMode) {
+        guard let window = mainWindow() else { return }
+        applyAcceptedChrome(to: window)
+        switch mode {
+        case .normal, .songFocus:
+            isCompactPresentationActive = false
+            window.minSize = normalMinimumSize
+            if mode == .normal, let storedNormalFrame {
+                window.setFrame(storedNormalFrame, display: true, animate: true)
+                self.storedNormalFrame = nil
+            } else if window.frame.width < normalMinimumSize.width || window.frame.height < normalMinimumSize.height {
+                restoreNormalSize(window)
+            }
+        case .compact:
+            isCompactPresentationActive = true
+            storedNormalFrame = storedNormalFrame ?? window.frame
+            window.minSize = compactSize
+            let center = NSPoint(x: window.frame.midX, y: window.frame.midY)
+            let compactFrame = NSRect(
+                x: center.x - compactSize.width / 2,
+                y: center.y - compactSize.height / 2,
+                width: compactSize.width,
+                height: compactSize.height
+            )
+            window.setFrame(compactFrame, display: true, animate: true)
+        }
+        applyAcceptedChrome(to: window)
+        DispatchQueue.main.async {
+            applyAcceptedChrome(to: window)
+        }
+    }
+
+    static func applyAcceptedChrome(to window: NSWindow) {
+        window.isOpaque = true
+        window.backgroundColor = MusicPalette.nsSpaceBlack
+        window.hasShadow = true
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.styleMask.insert(.titled)
+        window.styleMask.insert(.fullSizeContentView)
+        window.styleMask.insert([.closable, .miniaturizable, .resizable])
+        window.toolbarStyle = .unified
+        if #available(macOS 11.0, *) {
+            window.titlebarSeparatorStyle = .none
+        }
+    }
+
+    private static func restoreNormalSize(_ window: NSWindow) {
+        let screenFrame = (window.screen ?? NSScreen.main)?.visibleFrame ?? window.frame
+        let width = min(normalMinimumSize.width, screenFrame.width - 36)
+        let height = min(normalMinimumSize.height, screenFrame.height - 36)
+        let frame = NSRect(
+            x: screenFrame.midX - width / 2,
+            y: screenFrame.midY - height / 2,
+            width: width,
+            height: height
+        )
+        window.setFrame(frame, display: true, animate: true)
+    }
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let minimumWindowSize = NSSize(width: 1180, height: 760)
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -95,19 +162,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fitVisibleWindows() {
         for window in NSApp.windows where window.isVisible || window.title == AppConfiguration.appName {
+            let minimumWindowSize = MusicWindowActions.currentMinimumSize
             window.minSize = minimumWindowSize
-            window.isOpaque = true
-            window.backgroundColor = MusicPalette.nsSpaceBlack
-            window.hasShadow = true
-            window.titlebarAppearsTransparent = true
-            window.titleVisibility = .hidden
-            window.styleMask.insert(.titled)
-            window.styleMask.insert(.fullSizeContentView)
-            window.styleMask.insert([.closable, .miniaturizable, .resizable])
-            window.toolbarStyle = .unified
-            if #available(macOS 11.0, *) {
-                window.titlebarSeparatorStyle = .none
-            }
+            MusicWindowActions.applyAcceptedChrome(to: window)
             guard let screen = window.screen ?? NSScreen.main else { continue }
             let visible = screen.visibleFrame.insetBy(dx: 18, dy: 18)
             var frame = window.frame

@@ -6,8 +6,7 @@ instead of interrupting the current task or trusting memory.
 
 ## Active
 
-- Add Apple Music-style song focus mode: hovering current song artwork shows a darkened artwork overlay with an expand arrow, clicking opens a full-window song-only view with album-color blur, close and compact-player glass controls, no lyrics panel, and playback controls.
-- Add Apple Music-style compact player mode from song focus: shrink the whole Music window into a small rounded player with artwork/title/progress/transport controls, and reveal secondary controls on hover.
+- None.
 
 ## Parked Ideas
 
@@ -57,3 +56,5 @@ instead of interrupting the current task or trusting memory.
 - Move the left and right loop controls closer to the three-button transport cluster, roughly halving the gap on each side, while preserving the relative spacing among previous/play/next.
 - Remove the small chevron marks next to the now-playing ellipsis and list buttons.
 - Fix the now-playing ellipsis menu's `Move to Group` submenu flickering by flattening move targets into the main menu section.
+- Add Apple Music-style song focus mode: hovering current song artwork shows a darkened artwork overlay with an expand arrow, clicking opens a full-window song-only view with album-color blur, close and compact-player glass controls, no lyrics panel, and playback controls.
+- Add Apple Music-style compact player mode from song focus: shrink the whole Music window into a small rounded player with artwork/title/progress/transport controls, and reveal secondary controls on hover.

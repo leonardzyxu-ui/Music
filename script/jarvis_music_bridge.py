@@ -110,6 +110,11 @@ class MusicBridgeClient:
     def playback_state(self) -> dict[str, Any]:
         return self._request("GET", "/playback-state")
 
+    def player_presentation(self, mode: str | None = None) -> dict[str, Any]:
+        if mode is None:
+            return self._request("GET", "/player/presentation")
+        return self._request("POST", "/player/presentation", query={"mode": mode})
+
     def volume(self, level: float | None = None) -> dict[str, Any]:
         if level is None:
             return self._request("GET", "/volume")
@@ -331,7 +336,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=float, default=360.0)
 
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for name in ["health", "capabilities", "status", "songs", "groups", "now-playing", "playback-state", "library-sync", "window-controls", "process-timeout-diagnostics", "youtube-import-activity", "pause", "resume", "stop", "next", "previous", "refresh-library", "refresh-smart-picker"]:
+    for name in ["health", "capabilities", "status", "songs", "groups", "now-playing", "playback-state", "player-presentation", "library-sync", "window-controls", "process-timeout-diagnostics", "youtube-import-activity", "pause", "resume", "stop", "next", "previous", "refresh-library", "refresh-smart-picker"]:
         subparsers.add_parser(name)
 
     search = subparsers.add_parser("search")
@@ -384,6 +389,9 @@ def main(argv: list[str] | None = None) -> int:
 
     repeat = subparsers.add_parser("repeat")
     repeat.add_argument("mode", choices=["off", "all", "one", "0", "1", "2"])
+
+    player_presentation = subparsers.add_parser("player-presentation-set")
+    player_presentation.add_argument("mode", choices=["normal", "focus", "songFocus", "compact"])
 
     window_action = subparsers.add_parser("window-control-action")
     window_action.add_argument("action", choices=["close", "minimize", "zoom"])
@@ -456,6 +464,10 @@ def dispatch(client: MusicBridgeClient, args: argparse.Namespace) -> dict[str, A
         return client.shuffle(args.enabled in {"true", "on", "1"})
     if command == "repeat":
         return client.repeat(args.mode)
+    if command == "player_presentation":
+        return client.player_presentation()
+    if command == "player_presentation_set":
+        return client.player_presentation(args.mode)
     if command == "window_controls":
         return client.window_controls()
     if command == "window_control_action":

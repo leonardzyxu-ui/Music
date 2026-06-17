@@ -17,6 +17,9 @@ final class AppModel: ObservableObject {
     @Published var importStatus = "Search YouTube or paste a video URL, then rename before saving."
     @Published var importActivityLog: [ImportActivityEntry] = []
     @Published var isImporting = false
+    @Published var playerPresentationMode: PlayerPresentationMode = .normal {
+        didSet { MusicWindowActions.applyPlayerPresentationMode(playerPresentationMode) }
+    }
     @Published private var youtubeImportProgressOverride: Double?
 
     private var started = false
@@ -340,6 +343,8 @@ final class AppModel: ObservableObject {
             return .ok(["nowPlaying": playback.currentSong.map(songPayload) ?? NSNull(), "playing": playback.isPlaying])
         case ("GET", "/playback-state"):
             return .ok(playbackStatePayload())
+        case ("GET", "/player/presentation"):
+            return .ok(["mode": playerPresentationMode.rawValue])
         case ("GET", "/volume"):
             return .ok(["volume": playback.volume])
         case ("GET", "/diagnostics/library-sync"):
@@ -500,6 +505,15 @@ final class AppModel: ObservableObject {
                 return .error("Repeat mode must be off, all, one, 0, 1, or 2.", code: "invalid_repeat")
             }
             return .ok(["message": "Repeat updated", "repeatMode": playback.setRepeatMode(mode), "repeatModeName": repeatModeName(mode), "playback": playbackStatePayload()])
+        case ("POST", "/player/presentation"):
+            guard let rawMode = request.string("mode") ?? request.string("value") else {
+                return .error("Provide presentation mode as normal, focus, songFocus, or compact.", code: "missing_player_presentation_mode")
+            }
+            guard let mode = PlayerPresentationMode(rawBridgeValue: rawMode) else {
+                return .error("Presentation mode must be normal, focus, songFocus, or compact.", code: "invalid_player_presentation_mode")
+            }
+            playerPresentationMode = mode
+            return .ok(["message": "Player presentation updated", "mode": mode.rawValue])
         case ("POST", "/diagnostics/window-control-action"):
             guard let action = request.string("action"), ["close", "minimize", "zoom"].contains(action) else {
                 return .error("Provide action as close, minimize, or zoom.", code: "missing_window_control_action")
@@ -672,6 +686,10 @@ final class AppModel: ObservableObject {
                 ]),
                 capabilityAction("now-playing", "GET", "/now-playing", true, "Return the current song and playback state."),
                 capabilityAction("playback-state", "GET", "/playback-state", true, "Return current time, duration, shuffle, repeat, and queue snapshot state."),
+                capabilityAction("player-presentation-get", "GET", "/player/presentation", true, "Return the current visual player presentation mode."),
+                capabilityAction("player-presentation-set", "POST", "/player/presentation", true, "Set the visual player mode without UI automation.", [
+                    parameter("mode", required: true, description: "normal, focus/songFocus, or compact.")
+                ]),
                 capabilityAction("volume-get", "GET", "/volume", true, "Return app playback volume."),
                 capabilityAction("volume-set", "POST", "/volume", true, "Set app playback volume from 0.0 to 1.0.", [
                     parameter("level", required: true, description: "Volume as a decimal from 0.0 to 1.0. Also accepts value or volume.")

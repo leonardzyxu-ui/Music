@@ -40,6 +40,7 @@ enum MusicWindowControls {
         guard let window = MusicWindowActions.mainWindow() else {
             return ["available": false]
         }
+        MusicWindowActions.applyAcceptedChrome(to: window)
         let frameLayer = window.contentView?.superview?.layer
         let contentLayer = window.contentView?.layer
         return [
