@@ -362,6 +362,8 @@ final class AppModel: ObservableObject {
             ])
         case ("GET", "/diagnostics/window-controls"):
             return .ok(MusicWindowControls.diagnosticsPayload())
+        case ("POST", "/diagnostics/window-snapshot"):
+            return .ok(MusicWindowControls.snapshotPayload())
         case ("POST", "/diagnostics/process-timeout"):
             do {
                 return .ok(try await processTimeoutDiagnosticPayload())
@@ -723,6 +725,7 @@ final class AppModel: ObservableObject {
                 capabilityAction("source-metadata-diagnostics", "GET", "/diagnostics/source-metadata", true, "Re-read a song file without database state and report source URL metadata recovery.", [
                     parameter("id", required: true, description: "Song id to inspect.")
                 ]),
+                capabilityAction("window-snapshot-diagnostics", "POST", "/diagnostics/window-snapshot", true, "Render an app-owned Music window snapshot for visual QA without capturing the desktop."),
                 capabilityAction("process-timeout-diagnostics", "POST", "/diagnostics/process-timeout", true, "Simulate a slow helper timeout in temporary storage and verify the shared MP3 library is unchanged."),
                 capabilityAction("youtube-helper-error-diagnostics", "POST", "/diagnostics/youtube-helper-error", true, "Classify a captured yt-dlp/ffmpeg failure into Jarvis-safe YouTube error codes.", [
                     parameter("message", required: true, description: "Helper stderr/stdout text to classify."),

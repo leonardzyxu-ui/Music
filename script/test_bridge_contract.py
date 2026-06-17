@@ -50,6 +50,7 @@ REQUIRED_ACTIONS = {
     "refresh-library",
     "library-sync",
     "source-metadata-diagnostics",
+    "window-snapshot-diagnostics",
     "process-timeout-diagnostics",
     "youtube-helper-error-diagnostics",
     "youtube-import-plan-diagnostics",
@@ -71,6 +72,7 @@ def main() -> int:
         ("status", lambda: assert_status(client.status())),
         ("library-sync", lambda: assert_library_sync(client.library_sync())),
         ("window-control-diagnostics", lambda: assert_window_controls(client.window_controls())),
+        ("window-snapshot-diagnostics", lambda: assert_window_snapshot(client.window_snapshot())),
         ("process-timeout-diagnostics", lambda: assert_process_timeout(client.process_timeout_diagnostics())),
         ("youtube-error-classification", lambda: assert_youtube_error_classification(client)),
         ("groups", lambda: assert_groups(client.groups())),
@@ -188,6 +190,24 @@ def assert_window_controls(payload: dict[str, Any]) -> None:
         raise AssertionError(f"window should use a solid space-black opaque outer surface: {payload}")
     if not isinstance(payload.get("events"), list):
         raise AssertionError(f"window control events should be a list: {payload}")
+
+
+def assert_window_snapshot(payload: dict[str, Any]) -> None:
+    assert_ok(payload)
+    if "captured" not in payload:
+        raise AssertionError(f"snapshot diagnostic missing captured flag: {payload}")
+    if payload.get("captured") is False:
+        if not payload.get("reason"):
+            raise AssertionError(f"failed snapshot diagnostic should explain why: {payload}")
+        return
+    path = payload.get("path")
+    if not path or not Path(str(path)).exists():
+        raise AssertionError(f"snapshot path missing: {payload}")
+    if int(payload.get("width", 0)) <= 0 or int(payload.get("height", 0)) <= 0:
+        raise AssertionError(f"snapshot dimensions missing: {payload}")
+    shape = payload.get("windowShape")
+    if not isinstance(shape, dict) or shape.get("outerCornerMode") != "nativeSystemRounded":
+        raise AssertionError(f"snapshot should include accepted window diagnostics: {payload}")
 
 
 def assert_process_timeout(payload: dict[str, Any]) -> None:

@@ -36,6 +36,116 @@ enum MusicWindowControls {
         ]
     }
 
+    static func snapshotPayload() -> [String: Any] {
+        guard let window = MusicWindowActions.mainWindow() else {
+            return [
+                "captured": false,
+                "reason": "No visible Music window is available."
+            ]
+        }
+        MusicWindowActions.applyAcceptedChrome(to: window)
+        guard let view = window.contentView?.superview ?? window.contentView else {
+            return [
+                "captured": false,
+                "reason": "Music window has no renderable root view."
+            ]
+        }
+
+        let bounds = view.bounds
+        guard bounds.width > 0, bounds.height > 0 else {
+            return [
+                "captured": false,
+                "reason": "Music window root view has an empty size."
+            ]
+        }
+
+        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: bounds) else {
+            return [
+                "captured": false,
+                "reason": "Music could not allocate an app-owned bitmap snapshot."
+            ]
+        }
+
+        let appearance = window.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? window.effectiveAppearance
+            : NSAppearance(named: .darkAqua) ?? window.effectiveAppearance
+        appearance.performAsCurrentDrawingAppearance {
+            view.cacheDisplay(in: bounds, to: bitmap)
+        }
+        guard bitmapLooksVisuallyTrustworthy(bitmap) else {
+            return [
+                "captured": false,
+                "method": "appkit-view-cache-fallback",
+                "reason": "AppKit offscreen material rendering did not match the live dark Music window."
+            ]
+        }
+        guard let png = bitmap.representation(using: .png, properties: [:]) else {
+            return [
+                "captured": false,
+                "reason": "Music could not encode the app-owned snapshot as PNG."
+            ]
+        }
+
+        let url = AppConfiguration.appOwnedWindowSnapshotURL
+        do {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try png.write(to: url, options: .atomic)
+            return [
+                "captured": true,
+                "method": "appkit-view-cache-fallback",
+                "path": url.path,
+                "width": bitmap.pixelsWide,
+                "height": bitmap.pixelsHigh,
+                "scale": bitmap.size.width > 0 ? Double(bitmap.pixelsWide) / bitmap.size.width : 0,
+                "visualFidelityWarning": "AppKit offscreen material rendering may differ from the live window.",
+                "windowShape": windowShapePayload()
+            ]
+        } catch {
+            return [
+                "captured": false,
+                "reason": error.localizedDescription,
+                "path": url.path
+            ]
+        }
+    }
+
+    private static func bitmapLooksVisuallyTrustworthy(_ bitmap: NSBitmapImageRep) -> Bool {
+        let width = bitmap.pixelsWide
+        let height = bitmap.pixelsHigh
+        guard width > 0, height > 0 else { return false }
+
+        var brightPixels = 0
+        var darkPixels = 0
+        var coloredPixels = 0
+        var leftMaterialBrightPixels = 0
+        var leftMaterialSamples = 0
+        let xStep = max(1, width / 20)
+        let yStep = max(1, height / 20)
+        for y in stride(from: 0, to: height, by: yStep) {
+            for x in stride(from: 0, to: width, by: xStep) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                let brightness = (color.redComponent + color.greenComponent + color.blueComponent) / 3
+                if brightness > 0.18 { brightPixels += 1 }
+                if brightness < 0.05 { darkPixels += 1 }
+                if max(color.redComponent, color.greenComponent, color.blueComponent) - min(color.redComponent, color.greenComponent, color.blueComponent) > 0.08 {
+                    coloredPixels += 1
+                }
+                if x < width / 5 {
+                    leftMaterialSamples += 1
+                    if brightness > 0.72 {
+                        leftMaterialBrightPixels += 1
+                    }
+                }
+            }
+        }
+        let leftMaterialIsBlownOut = leftMaterialSamples > 0
+            && Double(leftMaterialBrightPixels) / Double(leftMaterialSamples) > 0.35
+        return brightPixels > 8 && darkPixels > 8 && coloredPixels > 2 && !leftMaterialIsBlownOut
+    }
+
     private static func windowShapePayload() -> [String: Any] {
         guard let window = MusicWindowActions.mainWindow() else {
             return ["available": false]

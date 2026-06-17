@@ -41,4 +41,10 @@ enum AppConfiguration {
     static var windowControlDiagnosticsURL: URL {
         applicationSupportURL.appendingPathComponent("window-control-events.log")
     }
+
+    static var appOwnedWindowSnapshotURL: URL {
+        projectRoot
+            .appendingPathComponent("screenshots", isDirectory: true)
+            .appendingPathComponent("app-owned-window-snapshot.png")
+    }
 }

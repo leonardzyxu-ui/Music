@@ -79,7 +79,7 @@
 <body>
   <main>
     <section class="hero">
-      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 03:05 CST</p>
+      <p class="pill"><span class="ok">●</span> Draft report updated at 2026-06-18 03:32 CST</p>
       <h1>Music Overnight Report</h1>
       <p>Native macOS Music app checkpoint for Leo. This report is a living morning handoff and will be finalized before 6:30 AM Beijing time.</p>
     </section>
@@ -97,8 +97,8 @@
 
       <article class="card">
         <h2>Latest Commit</h2>
-        <p><code>5ef6f9d</code> - Refresh Music report after 0254 verification</p>
-        <p>Latest app-code commit: <code>ca6ef95</code> - Add Music player focus modes</p>
+        <p><code>f426913</code> - Document neutral Play Bar glass rule</p>
+        <p>Latest app-code change pending verification: app-owned window snapshot diagnostics.</p>
       </article>
     </section>
 
@@ -110,6 +110,8 @@
           <li>Added compact player presentation mode with its own window sizing path.</li>
           <li>Added typed Jarvis bridge actions for getting/setting player presentation mode.</li>
           <li>Kept the normal Play Bar glass neutral; it does not tint itself from song artwork colors.</li>
+          <li>Recorded the neutral Play Bar glass rule in the UI terminology and feature-queue history so future polish does not accidentally reintroduce artwork-color tinting.</li>
+          <li>Added a privacy-safe app-owned window snapshot diagnostic endpoint for future visual QA without full-desktop capture.</li>
           <li>Centralized accepted window chrome application so mode switches cannot drift away from the protected window style.</li>
           <li>Cleared the active feature queue for the focus/compact batch.</li>
         </ul>
@@ -125,9 +127,11 @@
           <li><span class="ok">Passed</span>: <code>git diff --check</code></li>
           <li><span class="ok">Repeated</span>: the same safe verification pass was rerun at 02:33 CST and stayed green except for the known screenshot capture limitation.</li>
           <li><span class="ok">Repeated</span>: build, bridge contract, and whitespace checks were rerun at 02:54 CST and stayed green.</li>
+          <li><span class="ok">Added</span>: <code>POST /diagnostics/window-snapshot</code> now refuses to save a misleading image when offscreen material rendering does not match the live Music window.</li>
           <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
           <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
           <li><span class="warn">Investigated</span>: Computer Use sees the installed <code>dist/Music.app</code>, but cannot attach to its custom window and returns <code>cgWindowNotFound</code>.</li>
+          <li><span class="warn">Investigated</span>: app-owned offscreen snapshots are privacy-safe but not yet visually faithful because macOS material rendering differs from the live window; the diagnostic reports that mismatch instead of treating it as proof.</li>
         </ul>
       </article>
 
@@ -146,6 +150,7 @@
         <ul>
           <li>Focus-mode preview from the app-window capture: <code>screenshots/focus-mode-preview.png</code></li>
           <li>Corner audit screenshot path, currently stale because capture is failing: <code>screenshots/window-corner-audit.png</code></li>
+          <li>App-owned snapshot diagnostic path, currently not accepted as visual proof until material rendering matches the live app: <code>screenshots/app-owned-window-snapshot.png</code></li>
         </ul>
       </article>
     </section>
@@ -155,6 +160,7 @@
         <h2>Known Limitations</h2>
         <ul>
           <li>The app-window screenshot path needs repair or replacement; <code>screencapture -l</code> is refusing the Music window even though the bridge and ScreenCaptureKit window enumeration see it; Computer Use currently cannot attach either.</li>
+          <li>The app-owned snapshot endpoint is safe, but currently reports a material-rendering mismatch instead of saving a misleading image.</li>
           <li>Compact mode has bridge and window-size coverage, but I want stronger screenshot evidence before calling it visually perfect.</li>
           <li>The optional advertisement website has not started yet because Music itself still deserves the verification time.</li>
         </ul>

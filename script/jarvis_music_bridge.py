@@ -135,6 +135,9 @@ class MusicBridgeClient:
     def window_control_action(self, action: str) -> dict[str, Any]:
         return self._request("POST", "/diagnostics/window-control-action", query={"action": action})
 
+    def window_snapshot(self) -> dict[str, Any]:
+        return self._request("POST", "/diagnostics/window-snapshot")
+
     def process_timeout_diagnostics(self) -> dict[str, Any]:
         return self._request("POST", "/diagnostics/process-timeout")
 
