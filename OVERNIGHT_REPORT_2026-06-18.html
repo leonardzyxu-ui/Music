@@ -124,6 +124,7 @@
           <li><span class="ok">Passed</span>: <code>git diff --check</code></li>
           <li><span class="warn">Tooling issue</span>: <code>python3 script/audit_window_corners.py</code> currently fails at screenshot capture with <code>could not create image from window</code>. Bridge chrome diagnostics pass.</li>
           <li><span class="warn">Investigated</span>: ScreenCaptureKit can enumerate the correct Music window, but both legacy <code>screencapture</code> and ScreenCaptureKit fail at image capture from this CLI context.</li>
+          <li><span class="warn">Investigated</span>: Computer Use sees the installed <code>dist/Music.app</code>, but cannot attach to its custom window and returns <code>cgWindowNotFound</code>.</li>
         </ul>
       </article>
 
@@ -150,7 +151,7 @@
       <article class="card">
         <h2>Known Limitations</h2>
         <ul>
-          <li>The app-window screenshot path needs repair or replacement; <code>screencapture -l</code> is refusing the Music window even though the bridge and ScreenCaptureKit window enumeration see it.</li>
+          <li>The app-window screenshot path needs repair or replacement; <code>screencapture -l</code> is refusing the Music window even though the bridge and ScreenCaptureKit window enumeration see it; Computer Use currently cannot attach either.</li>
           <li>Compact mode has bridge and window-size coverage, but I want stronger screenshot evidence before calling it visually perfect.</li>
           <li>The optional advertisement website has not started yet because Music itself still deserves the verification time.</li>
         </ul>
