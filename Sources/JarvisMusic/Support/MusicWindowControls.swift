@@ -161,6 +161,22 @@ enum MusicWindowControls {
             "toolbarStyle": String(describing: window.toolbarStyle),
             "usesFullSizeContentView": window.styleMask.contains(.fullSizeContentView),
             "windowNumber": window.windowNumber,
+            "frame": [
+                "width": window.frame.width,
+                "height": window.frame.height
+            ],
+            "minSize": [
+                "width": window.minSize.width,
+                "height": window.minSize.height
+            ],
+            "contentMinSize": [
+                "width": window.contentMinSize.width,
+                "height": window.contentMinSize.height
+            ],
+            "maxSize": [
+                "width": window.maxSize.width,
+                "height": window.maxSize.height
+            ],
             "sharingType": String(describing: window.sharingType),
             "sharingTypeRawValue": window.sharingType.rawValue,
             "frameCornerRadius": frameLayer?.cornerRadius ?? 0,

@@ -29,6 +29,7 @@ struct NowPlayingBar: View {
             let availableCenter = barWidth - contentPadding * 2 - leftWidth - rightWidth - spacingBudget
             let centerWidth = max(compact ? CGFloat(112) : CGFloat(178), availableCenter)
             let barHeight = CGFloat(50)
+            let bottomInset = CGFloat(26)
 
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
@@ -73,10 +74,10 @@ struct NowPlayingBar: View {
                 }
                 .padding(.leading, leadingInset)
                 .padding(.trailing, trailingInset)
-                .padding(.bottom, 18)
+                .padding(.bottom, bottomInset)
             }
         }
-        .frame(height: 88)
+        .frame(height: 104)
     }
 
     private func transportControls(includeModes: Bool) -> some View {

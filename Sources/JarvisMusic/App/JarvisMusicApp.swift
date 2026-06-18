@@ -63,7 +63,7 @@ struct JarvisMusicApp: App {
 
 @MainActor
 enum MusicWindowActions {
-    static let normalMinimumSize = NSSize(width: 1180, height: 760)
+    static let normalMinimumSize = NSSize(width: 1180, height: 796)
     static let songFocusMinimumSize = NSSize(width: 920, height: 620)
     static let compactSize = NSSize(width: 394, height: 204)
     static var currentMinimumSize: NSSize {
@@ -73,6 +73,7 @@ enum MusicWindowActions {
     private static var isCompactPresentationActive = false
     private static var currentPresentationMode: PlayerPresentationMode = .normal
     private static var storedNormalFrame: NSRect?
+    private static let resizeDelegate = MusicWindowResizeDelegate()
 
     static func mainWindow() -> NSWindow? {
         NSApp.keyWindow
@@ -88,8 +89,8 @@ enum MusicWindowActions {
         switch mode {
         case .normal:
             isCompactPresentationActive = false
+            window.contentMinSize = contentMinimumSize(for: .normal)
             window.minSize = normalMinimumSize
-            window.contentMinSize = normalMinimumSize
             window.maxSize = unconstrainedMaximumSize
             if mode == .normal, let storedNormalFrame {
                 window.setFrame(storedNormalFrame, display: true, animate: true)
@@ -99,8 +100,8 @@ enum MusicWindowActions {
             }
         case .songFocus:
             isCompactPresentationActive = false
+            window.contentMinSize = contentMinimumSize(for: .songFocus)
             window.minSize = songFocusMinimumSize
-            window.contentMinSize = songFocusMinimumSize
             window.maxSize = unconstrainedMaximumSize
             if window.frame.width < songFocusMinimumSize.width || window.frame.height < songFocusMinimumSize.height {
                 restoreMinimumSize(songFocusMinimumSize, window: window)
@@ -108,8 +109,8 @@ enum MusicWindowActions {
         case .compact:
             isCompactPresentationActive = true
             storedNormalFrame = storedNormalFrame ?? window.frame
+            window.contentMinSize = contentMinimumSize(for: .compact)
             window.minSize = compactSize
-            window.contentMinSize = compactSize
             window.maxSize = compactSize
             let center = NSPoint(x: window.frame.midX, y: window.frame.midY)
             let compactFrame = NSRect(
@@ -135,8 +136,9 @@ enum MusicWindowActions {
     }
 
     private static func applyChrome(to window: NSWindow, mode: PlayerPresentationMode) {
+        installResizeProtection(on: window)
+        window.contentMinSize = contentMinimumSize(for: mode)
         window.minSize = minimumSize(for: mode)
-        window.contentMinSize = minimumSize(for: mode)
         window.maxSize = maximumSize(for: mode)
         window.isOpaque = true
         window.backgroundColor = MusicPalette.nsSpaceBlack
@@ -149,6 +151,9 @@ enum MusicWindowActions {
         window.toolbarStyle = .unified
         if #available(macOS 11.0, *) {
             window.titlebarSeparatorStyle = .none
+        }
+        defer {
+            enforceCurrentSizeConstraints(on: window, animate: false)
         }
 
         guard mode != .normal else {
@@ -173,6 +178,37 @@ enum MusicWindowActions {
             contentLayer.cornerRadius = radius
             contentLayer.cornerCurve = .continuous
             contentLayer.masksToBounds = true
+        }
+    }
+
+    static func clampedWindowSize(_ proposedSize: NSSize, for window: NSWindow? = nil) -> NSSize {
+        let liveMinimumSize = window?.minSize ?? .zero
+        let minimumSize = NSSize(
+            width: max(currentMinimumSize.width, liveMinimumSize.width),
+            height: max(currentMinimumSize.height, liveMinimumSize.height)
+        )
+        let maximumSize = maximumSize(for: currentPresentationMode)
+        return NSSize(
+            width: min(max(proposedSize.width, minimumSize.width), maximumSize.width),
+            height: min(max(proposedSize.height, minimumSize.height), maximumSize.height)
+        )
+    }
+
+    static func enforceCurrentSizeConstraints(on window: NSWindow, animate: Bool) {
+        let clampedSize = clampedWindowSize(window.frame.size, for: window)
+        guard clampedSize.width != window.frame.width || clampedSize.height != window.frame.height else {
+            return
+        }
+        var frame = window.frame
+        let oldMaxY = frame.maxY
+        frame.size = clampedSize
+        frame.origin.y = oldMaxY - clampedSize.height
+        window.setFrame(frame, display: true, animate: animate)
+    }
+
+    private static func installResizeProtection(on window: NSWindow) {
+        if window.delegate !== resizeDelegate {
+            window.delegate = resizeDelegate
         }
     }
 
@@ -208,8 +244,29 @@ enum MusicWindowActions {
         mode == .compact ? compactSize : unconstrainedMaximumSize
     }
 
+    private static func contentMinimumSize(for mode: PlayerPresentationMode) -> NSSize {
+        switch mode {
+        case .normal:
+            return NSSize(width: 1, height: 1)
+        case .songFocus, .compact:
+            return minimumSize(for: mode)
+        }
+    }
+
     private static var unconstrainedMaximumSize: NSSize {
         NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    }
+}
+
+@MainActor
+private final class MusicWindowResizeDelegate: NSObject, NSWindowDelegate {
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        MusicWindowActions.clampedWindowSize(frameSize, for: sender)
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        MusicWindowActions.enforceCurrentSizeConstraints(on: window, animate: false)
     }
 }
 
@@ -238,6 +295,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let minimumWindowSize = MusicWindowActions.currentMinimumSize
             window.minSize = minimumWindowSize
             MusicWindowActions.applyCurrentChrome(to: window)
+            MusicWindowActions.enforceCurrentSizeConstraints(on: window, animate: false)
             guard let screen = window.screen ?? NSScreen.main else { continue }
             let visible = screen.visibleFrame.insetBy(dx: 18, dy: 18)
             var frame = window.frame

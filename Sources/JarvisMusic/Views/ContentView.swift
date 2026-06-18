@@ -59,7 +59,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(MusicPalette.contentBlack)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    Color.clear.frame(height: 90)
+                    Color.clear.frame(height: 112)
                 }
                 .overlay(alignment: .bottom) {
                     NowPlayingBar(model: model)
