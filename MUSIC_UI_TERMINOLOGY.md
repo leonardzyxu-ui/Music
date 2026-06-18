@@ -2,6 +2,12 @@
 
 Use these names when discussing Music app controls.
 
+## Window Names
+
+- Window 1: Main window.
+- Window 2: Single song large window.
+- Window 3: Single song small window.
+
 ## Window Traffic Lights
 
 The native red, yellow, and green macOS window controls.

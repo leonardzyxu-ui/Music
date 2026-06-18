@@ -122,8 +122,10 @@ enum MusicWindowActions {
             window.setFrame(compactFrame, display: true, animate: true)
         }
         applyChrome(to: window, mode: mode)
+        window.makeKeyAndOrderFront(nil)
         DispatchQueue.main.async {
             applyChrome(to: window, mode: mode)
+            window.makeKeyAndOrderFront(nil)
         }
     }
 
@@ -140,8 +142,6 @@ enum MusicWindowActions {
         window.contentMinSize = contentMinimumSize(for: mode)
         window.minSize = minimumSize(for: mode)
         window.maxSize = maximumSize(for: mode)
-        window.isOpaque = true
-        window.backgroundColor = MusicPalette.nsSpaceBlack
         window.hasShadow = true
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
@@ -156,28 +156,57 @@ enum MusicWindowActions {
             enforceCurrentSizeConstraints(on: window, animate: false)
         }
 
-        guard mode != .normal else {
-            window.contentView?.superview?.layer?.cornerRadius = 0
-            window.contentView?.superview?.layer?.masksToBounds = false
-            window.contentView?.layer?.cornerRadius = 0
-            window.contentView?.layer?.masksToBounds = false
-            return
+        switch mode {
+        case .normal:
+            window.isOpaque = true
+            window.backgroundColor = MusicPalette.nsSpaceBlack
+            window.isMovableByWindowBackground = false
+            resetRoundedMask(on: window)
+        case .songFocus:
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.isMovableByWindowBackground = false
+            resetRoundedMask(on: window)
+        case .compact:
+            window.styleMask.remove(.titled)
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.isMovableByWindowBackground = true
+            let radius = CGFloat(30)
+            if let frameLayer = window.contentView?.superview?.layer {
+                frameLayer.cornerRadius = radius
+                frameLayer.cornerCurve = .continuous
+                frameLayer.masksToBounds = true
+            }
+            if let contentLayer = window.contentView?.layer {
+                contentLayer.cornerRadius = radius
+                contentLayer.cornerCurve = .continuous
+                contentLayer.masksToBounds = true
+            }
         }
+        window.contentMinSize = contentMinimumSize(for: mode)
+        window.minSize = minimumSize(for: mode)
+        window.maxSize = maximumSize(for: mode)
+    }
 
-        window.styleMask.remove(.titled)
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.isMovableByWindowBackground = true
-        let radius = mode == .compact ? CGFloat(30) : CGFloat(26)
+    private static func resetRoundedMask(on window: NSWindow) {
         if let frameLayer = window.contentView?.superview?.layer {
-            frameLayer.cornerRadius = radius
-            frameLayer.cornerCurve = .continuous
-            frameLayer.masksToBounds = true
+            frameLayer.cornerRadius = 0
+            frameLayer.masksToBounds = false
         }
         if let contentLayer = window.contentView?.layer {
-            contentLayer.cornerRadius = radius
-            contentLayer.cornerCurve = .continuous
-            contentLayer.masksToBounds = true
+            contentLayer.cornerRadius = 0
+            contentLayer.masksToBounds = false
+        }
+        for buttonType in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            window.standardWindowButton(buttonType)?.isHidden = false
+        }
+    }
+
+    static func refreshVisibleWindows() {
+        for window in NSApp.windows where window.isVisible || window.title == AppConfiguration.appName {
+            applyCurrentChrome(to: window)
+            enforceCurrentSizeConstraints(on: window, animate: false)
         }
     }
 
@@ -275,14 +304,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        scheduleWindowFit()
+        scheduleInitialWindowFit()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
-        scheduleWindowFit()
+        MusicWindowActions.refreshVisibleWindows()
     }
 
-    private func scheduleWindowFit() {
+    private func scheduleInitialWindowFit() {
         for delay in [0.1, 0.35, 0.8, 1.5] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 self.fitVisibleWindows()
@@ -311,11 +340,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if shouldAdjust {
                 frame.size.width = min(max(frame.width, minimumWindowSize.width), visible.width)
                 frame.size.height = min(max(frame.height, minimumWindowSize.height), visible.height)
-                frame.origin.x = visible.midX - frame.width / 2
-                frame.origin.y = visible.midY - frame.height / 2
-                window.makeKeyAndOrderFront(nil)
+                let maximumX = max(visible.minX, visible.maxX - frame.width)
+                let maximumY = max(visible.minY, visible.maxY - frame.height)
+                frame.origin.x = min(max(frame.minX, visible.minX), maximumX)
+                frame.origin.y = min(max(frame.minY, visible.minY), maximumY)
                 window.setFrame(frame, display: true, animate: false)
-                window.orderFrontRegardless()
             }
         }
     }
