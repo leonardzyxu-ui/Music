@@ -26,6 +26,7 @@ final class LibraryStore: ObservableObject {
     private var autoRefreshTask: Task<Void, Never>?
     private var lastLibraryFingerprint = ""
     private let autoRefreshIntervalSeconds: UInt64 = 10
+    private let smartPickerRecentWindow: TimeInterval = 12 * 60 * 60
 
     var libraryURL: URL {
         AppConfiguration.musicLibraryURL
@@ -46,6 +47,10 @@ final class LibraryStore: ObservableObject {
     var selectedSongs: [Song] {
         let source = selection == .recycleBin ? trashedSongs : songs
         return source.filter { selectedSongIDs.contains($0.id) }
+    }
+
+    func allSongsSortedByLastPlayed() -> [Song] {
+        songs.sortedByLastPlayed(using: stats)
     }
 
     func load() async {
@@ -79,7 +84,7 @@ final class LibraryStore: ObservableObject {
         let base: [Song]
         switch selection ?? .allSongs {
         case .allSongs:
-            base = songs.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            base = allSongsSortedByLastPlayed()
         case .smartPicker:
             base = smartSongs
         case .recycleBin:
@@ -300,7 +305,7 @@ final class LibraryStore: ObservableObject {
             next.manualSelections += 1
             next.lastManualSelectionAt = event.createdAt
         }
-        next.rankScore = score(stats: next, recentEvents: database.events.filter { $0.songID == event.songID } + [event])
+        next.rankScore = recentListeningMinutes(for: event.songID, including: event, now: event.createdAt)
 
         database.stats[event.songID] = next
         database.events.append(event)
@@ -564,12 +569,16 @@ final class LibraryStore: ObservableObject {
     }
 
     private func rankedSongScores(excluding excludedID: String? = nil) -> [(song: Song, score: Double)] {
-        let recentEventsBySong = Dictionary(grouping: database.events, by: \.songID)
+        let cutoff = Date().addingTimeInterval(-smartPickerRecentWindow)
+        let recentEventsBySong = Dictionary(
+            grouping: database.events.filter { $0.createdAt >= cutoff },
+            by: \.songID
+        )
         return songs
             .filter { $0.id != excludedID }
             .map { song in
                 let stats = database.stats[song.id] ?? ListeningStats(songID: song.id)
-                let computedScore = score(stats: stats, recentEvents: recentEventsBySong[song.id] ?? [])
+                let computedScore = listeningMinutes(from: recentEventsBySong[song.id] ?? [])
                 return (song: song, score: stats.smartPickerRankOverride ?? computedScore)
             }
             .sorted { left, right in
@@ -587,26 +596,16 @@ final class LibraryStore: ObservableObject {
             }
     }
 
-    private func score(stats: ListeningStats, recentEvents: [ListeningEvent]) -> Double {
-        var score = 0.0
-        score += Double(stats.completions) * 8
-        score += min(12, stats.totalListenedSeconds / 60)
-        score += Double(stats.manualSelections) * 2.5
-        score += Double(stats.repeats) * 1.4
-        score -= Double(stats.skips) * 4
-        if let lastPlayed = stats.lastPlayedAt {
-            score += max(0, 4 - Date().timeIntervalSince(lastPlayed) / 86_400)
+    private func recentListeningMinutes(for songID: String, including event: ListeningEvent, now: Date) -> Double {
+        let cutoff = now.addingTimeInterval(-smartPickerRecentWindow)
+        let recentEvents = (database.events + [event]).filter { $0.songID == songID && $0.createdAt >= cutoff }
+        return listeningMinutes(from: recentEvents)
+    }
+
+    private func listeningMinutes(from events: [ListeningEvent]) -> Double {
+        events.reduce(0) { total, event in
+            total + max(0, event.listenedSeconds) / 60
         }
-        for event in recentEvents.suffix(20) {
-            let age = Date().timeIntervalSince(event.createdAt)
-            let decay = pow(0.5, age / 86_400)
-            var eventScore = event.completionRatio >= 0.8 ? 8 : max(0, event.listenedSeconds / 30)
-            if event.manualSelection { eventScore += 2.5 }
-            if event.earlySkip { eventScore -= 8 }
-            else if event.skipped { eventScore -= 4 }
-            score += eventScore * decay
-        }
-        return score
     }
 
     private func searchTokens(_ value: String) -> [String] {
@@ -625,6 +624,19 @@ final class LibraryStore: ObservableObject {
         let folded = value.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
         let replaced = folded.replacingOccurrences(of: #"[^a-z0-9\p{Han}\p{Hiragana}\p{Katakana}]+"#, with: " ", options: .regularExpression)
         return MusicFormatters.clean(replaced).lowercased()
+    }
+}
+
+private extension Array where Element == Song {
+    func sortedByLastPlayed(using stats: [String: ListeningStats]) -> [Song] {
+        sorted { left, right in
+            let leftDate = stats[left.id]?.lastPlayedAt ?? .distantPast
+            let rightDate = stats[right.id]?.lastPlayedAt ?? .distantPast
+            if leftDate != rightDate {
+                return leftDate > rightDate
+            }
+            return left.title.localizedCaseInsensitiveCompare(right.title) == .orderedAscending
+        }
     }
 }
 

@@ -310,7 +310,7 @@ final class AppModel: ObservableObject {
         case ("GET", "/songs"):
             let q = request.string("q") ?? ""
             if q.isEmpty {
-                return .ok(["songs": library.songs.map(songPayload)])
+                return .ok(["songs": library.allSongsSortedByLastPlayed().map(songPayload)])
             }
             let matches = library.searchMatches(q, limit: 50)
             return .ok([
@@ -594,7 +594,7 @@ final class AppModel: ObservableObject {
                 return .error("No song matched '\(query)'.", status: 404, code: "song_not_found")
             }
             let song = match.song
-            let base = library.visibleSongs().contains(song) ? library.visibleSongs() : library.songs
+            let base = library.visibleSongs().contains(song) ? library.visibleSongs() : library.allSongsSortedByLastPlayed()
             playback.play(song: song, queue: base, source: "Bridge search snapshot", manual: true)
             return .ok(["message": "Playing \(song.title)", "song": songPayload(song), "match": searchMatchPayload(match)])
         }
@@ -1056,7 +1056,7 @@ final class AppModel: ObservableObject {
         let cleanName = name.map { MusicFormatters.clean($0).lowercased() }
         let allAliases = Set(["all", "all songs", "all-songs", "library"])
         if cleanID == "all-songs" || cleanName.map(allAliases.contains) == true {
-            let songs = library.songs.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            let songs = library.allSongsSortedByLastPlayed()
             return PlaylistTarget(id: "all-songs", name: "All Songs", type: "library", smart: false, selection: .allSongs, songs: songs)
         }
 
