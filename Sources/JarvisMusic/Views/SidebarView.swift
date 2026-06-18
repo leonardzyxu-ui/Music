@@ -74,7 +74,7 @@ struct SidebarView: View {
                             Label("New Playlist", systemImage: "plus")
                                 .font(MusicTypography.sidebarItem)
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, 10)
                                 .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
                                 .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
@@ -90,7 +90,7 @@ struct SidebarView: View {
                         )
                     }
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 7)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
@@ -157,7 +157,7 @@ private struct SidebarSelectionRow: View {
                 .frame(width: 18)
             Text(title)
                 .lineLimit(1)
-            Spacer(minLength: 8)
+            Spacer(minLength: 6)
             if let count {
                 Text(count)
                     .font(MusicTypography.fixed(12, weight: .semibold))
@@ -166,7 +166,7 @@ private struct SidebarSelectionRow: View {
         }
         .font(MusicTypography.sidebarItem)
         .foregroundStyle(isSelected ? Color.red : .white)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
         .background {
             if isSelected {

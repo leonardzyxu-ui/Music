@@ -6,12 +6,11 @@ instead of interrupting the current task or trusting memory.
 
 ## Active
 
-- Enforce the main Music window minimum size at the exact healthy boundary Leo showed, so resizing cannot collapse it into only the traffic lights or crop any UI.
-- Tune the main sidebar width/density closer to Finder/Apple Music: narrower pane, less empty distance between labels and counts, while preserving comfortable click targets and current rounded/sidebar look.
+- None.
 
 ## Parked Ideas
 
-- Evaluate whether the compact/song-focus player should have a stricter fixed or minimum size so it cannot be vertically crushed into partial artwork/top-bar-only states.
+- None.
 
 ## Protected UI Rules
 
@@ -64,3 +63,11 @@ instead of interrupting the current task or trusting memory.
 - Add Apple Music-style song focus mode: hovering current song artwork shows a darkened artwork overlay with an expand arrow, clicking opens a full-window song-only view with album-color blur, close and compact-player glass controls, no lyrics panel, and playback controls.
 - Add Apple Music-style compact player mode from song focus: shrink the whole Music window into a small rounded player with artwork/title/progress/transport controls, and reveal secondary controls on hover.
 - Keep normal Play Bar Liquid Glass neutral instead of tinting it from song artwork/logo colors.
+- Remove the song-focus lyrics placeholder so the full-window song view is just the song, artwork, progress, and controls.
+- Remove the black titlebar strip from song-focus and compact player modes by using presentation-specific borderless rounded chrome.
+- Replace the compact-player `...` affordance with a collapse/expand-back icon and hover-only top controls.
+- Make song-focus and compact-player progress bars seekable via click/drag.
+- Make compact player/focus player surfaces self-contained and opaque enough that text from windows underneath cannot show through.
+- Enforce sane minimum/fixed sizes for song-focus and compact player modes so they cannot be crushed into top-bar-only or partial-artwork states.
+- Enforce the main Music window minimum size at the exact healthy boundary Leo showed, so resizing cannot collapse it into only the traffic lights or crop any UI.
+- Tune the main sidebar width/density closer to Finder/Apple Music: narrower pane, less empty distance between labels and counts, while preserving comfortable click targets and current rounded/sidebar look.

@@ -53,7 +53,7 @@ struct ContentView: View {
                 model: model,
                 onNewPlaylist: presentNewPlaylistDialog
             )
-            .navigationSplitViewColumnWidth(min: 220, ideal: 236, max: 276)
+            .navigationSplitViewColumnWidth(min: 190, ideal: 206, max: 232)
         } detail: {
             detailContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
