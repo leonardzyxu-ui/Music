@@ -80,6 +80,7 @@ def main() -> int:
         ("ranked-search", lambda: assert_ranked_search(client.search("Paradise"))),
         ("client-candidates", lambda: assert_client_candidates(client.candidates("Paradise", limit=3))),
         ("multi-word-search", lambda: assert_multi_word_search(client.search("Back In Black"))),
+        ("waving-through-window-alias", lambda: assert_waving_through_window_alias(client.search("Waving Through a Window"))),
         ("smart-picker-refresh", lambda: assert_smart_picker(client.refresh_smart_picker())),
         ("playback-controls", lambda: assert_playback_controls(client)),
         ("player-presentation", lambda: assert_player_presentation(client)),
@@ -354,6 +355,23 @@ def assert_multi_word_search(payload: dict[str, Any]) -> None:
     titles = [song.get("title", "") for song in payload.get("songs", [])]
     if not any("Back In Black" in title for title in titles):
         raise AssertionError(f"multi-word search did not find expected song: {titles[:5]}")
+
+
+def assert_waving_through_window_alias(payload: dict[str, Any]) -> None:
+    assert_ok(payload)
+    candidates = payload.get("candidates") or []
+    if not candidates:
+        raise AssertionError("expected Waving Through a Window alias candidates")
+    first_song = candidates[0].get("song") or {}
+    first_title = str(first_song.get("title") or "")
+    if "Dear Evan Hansen" not in first_title or "Tony Awards" not in first_title:
+        raise AssertionError(f"Waving Through a Window should resolve to the Tony Awards Dear Evan Hansen track, got: {first_title}")
+    titles = [str((candidate.get("song") or {}).get("title") or "") for candidate in candidates[:3]]
+    if any("Through The Fire And Flames" in title for title in titles):
+        raise AssertionError(f"Waving Through a Window false-matched DragonForce: {titles}")
+    fields = candidates[0].get("matchedFields") or []
+    if "alias" not in fields:
+        raise AssertionError(f"Waving Through a Window alias marker missing: {candidates[0]}")
 
 
 def assert_smart_picker(payload: dict[str, Any]) -> None:
