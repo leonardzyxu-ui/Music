@@ -43,7 +43,7 @@ enum MusicWindowControls {
                 "reason": "No visible Music window is available."
             ]
         }
-        MusicWindowActions.applyAcceptedChrome(to: window)
+        MusicWindowActions.applyCurrentChrome(to: window)
         guard let view = window.contentView?.superview ?? window.contentView else {
             return [
                 "captured": false,
@@ -150,7 +150,7 @@ enum MusicWindowControls {
         guard let window = MusicWindowActions.mainWindow() else {
             return ["available": false]
         }
-        MusicWindowActions.applyAcceptedChrome(to: window)
+        MusicWindowActions.applyCurrentChrome(to: window)
         let frameLayer = window.contentView?.superview?.layer
         let contentLayer = window.contentView?.layer
         return [

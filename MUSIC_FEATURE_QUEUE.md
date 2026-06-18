@@ -6,11 +6,12 @@ instead of interrupting the current task or trusting memory.
 
 ## Active
 
-- None.
+- Enforce the main Music window minimum size at the exact healthy boundary Leo showed, so resizing cannot collapse it into only the traffic lights or crop any UI.
+- Tune the main sidebar width/density closer to Finder/Apple Music: narrower pane, less empty distance between labels and counts, while preserving comfortable click targets and current rounded/sidebar look.
 
 ## Parked Ideas
 
-- None.
+- Evaluate whether the compact/song-focus player should have a stricter fixed or minimum size so it cannot be vertically crushed into partial artwork/top-bar-only states.
 
 ## Protected UI Rules
 
