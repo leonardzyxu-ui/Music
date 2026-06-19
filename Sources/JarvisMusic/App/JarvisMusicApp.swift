@@ -163,30 +163,37 @@ enum MusicWindowActions {
             window.isMovableByWindowBackground = false
             resetRoundedMask(on: window)
         case .songFocus:
+            window.styleMask.remove(.titled)
             window.isOpaque = false
             window.backgroundColor = .clear
             window.isMovableByWindowBackground = false
-            resetRoundedMask(on: window)
+            applyRoundedMask(on: window, radius: 34)
         case .compact:
             window.styleMask.remove(.titled)
             window.isOpaque = false
             window.backgroundColor = .clear
             window.isMovableByWindowBackground = true
-            let radius = CGFloat(30)
-            if let frameLayer = window.contentView?.superview?.layer {
-                frameLayer.cornerRadius = radius
-                frameLayer.cornerCurve = .continuous
-                frameLayer.masksToBounds = true
-            }
-            if let contentLayer = window.contentView?.layer {
-                contentLayer.cornerRadius = radius
-                contentLayer.cornerCurve = .continuous
-                contentLayer.masksToBounds = true
-            }
+            applyRoundedMask(on: window, radius: 30)
         }
         window.contentMinSize = contentMinimumSize(for: mode)
         window.minSize = minimumSize(for: mode)
         window.maxSize = maximumSize(for: mode)
+    }
+
+    private static func applyRoundedMask(on window: NSWindow, radius: CGFloat) {
+        for buttonType in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            window.standardWindowButton(buttonType)?.isHidden = true
+        }
+        if let frameLayer = window.contentView?.superview?.layer {
+            frameLayer.cornerRadius = radius
+            frameLayer.cornerCurve = .continuous
+            frameLayer.masksToBounds = true
+        }
+        if let contentLayer = window.contentView?.layer {
+            contentLayer.cornerRadius = radius
+            contentLayer.cornerCurve = .continuous
+            contentLayer.masksToBounds = true
+        }
     }
 
     private static func resetRoundedMask(on window: NSWindow) {

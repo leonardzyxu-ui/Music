@@ -3,6 +3,8 @@ import Foundation
 
 @MainActor
 enum MusicWindowControls {
+    private static var manualZoomRestoreFrames: [Int: NSRect] = [:]
+
     static func perform(_ action: String, window: NSWindow? = nil) -> Bool {
         record(action)
         guard let target = window ?? MusicWindowActions.mainWindow() else {
@@ -17,12 +19,32 @@ enum MusicWindowControls {
             }
         case "minimize":
             target.performMiniaturize(nil)
+            if !target.isMiniaturized {
+                target.miniaturize(nil)
+            }
         case "zoom":
+            let previousFrame = target.frame
             target.performZoom(nil)
+            if target.frame.equalTo(previousFrame) {
+                toggleManualZoom(for: target)
+            }
         default:
             return false
         }
         return true
+    }
+
+    private static func toggleManualZoom(for window: NSWindow) {
+        guard let screen = window.screen ?? NSScreen.main else { return }
+        if let restoreFrame = manualZoomRestoreFrames[window.windowNumber] {
+            manualZoomRestoreFrames[window.windowNumber] = nil
+            window.setFrame(restoreFrame, display: true, animate: true)
+            return
+        }
+
+        let targetFrame = screen.visibleFrame.insetBy(dx: 36, dy: 36)
+        manualZoomRestoreFrames[window.windowNumber] = window.frame
+        window.setFrame(targetFrame, display: true, animate: true)
     }
 
     static func diagnosticsPayload() -> [String: Any] {

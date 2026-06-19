@@ -121,86 +121,102 @@ private struct SongFocusView: View {
     var body: some View {
         GeometryReader { proxy in
             let song = playback.currentSong
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 FocusBackdrop(song: song)
                     .ignoresSafeArea()
 
-                VStack {
-                    HStack {
-                        HStack(spacing: 0) {
-                            Button {
-                                model.playerPresentationMode = .normal
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(MusicTypography.fixed(22, weight: .medium))
-                                    .frame(width: 54, height: 44)
-                            }
-                            .buttonStyle(.plain)
+                VStack(alignment: .center, spacing: 20) {
+                    ArtworkView(song: song, size: focusArtworkSize(in: proxy.size))
+                        .shadow(color: .black.opacity(0.45), radius: 34, y: 18)
 
-                            Divider()
-                                .frame(height: 24)
-                                .overlay(Color.white.opacity(0.18))
-
-                            Button {
-                                model.playerPresentationMode = .compact
-                            } label: {
-                                Image(systemName: "rectangle.on.rectangle")
-                                    .font(MusicTypography.fixed(20, weight: .semibold))
-                                    .frame(width: 60, height: 44)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .foregroundStyle(.white.opacity(0.92))
-                        .background {
-                            Capsule(style: .continuous)
-                                .fill(.ultraThinMaterial)
-                            Capsule(style: .continuous)
-                                .fill(Color.white.opacity(0.07))
-                        }
-                        .overlay {
-                            Capsule(style: .continuous)
-                                .stroke(Color.white.opacity(0.22), lineWidth: 1)
-                        }
-
-                        Spacer()
+                    VStack(alignment: .center, spacing: 4) {
+                        Text(song?.title ?? "Not Playing")
+                            .font(MusicTypography.fixed(21, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.94))
+                            .lineLimit(1)
+                            .multilineTextAlignment(.center)
+                        Text(song?.artist ?? "Choose a song")
+                            .font(MusicTypography.fixed(15, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.72))
+                            .lineLimit(1)
+                            .multilineTextAlignment(.center)
                     }
-                    .padding(.top, 18)
-                    .padding(.horizontal, 92)
+                    .frame(width: focusPanelWidth(in: proxy.size), alignment: .center)
 
-                    Spacer()
+                    FocusProgressBar(playback: playback)
+                        .frame(width: focusPanelWidth(in: proxy.size), height: 24)
 
-                    VStack(alignment: .leading, spacing: 22) {
-                        ArtworkView(song: song, size: min(280, max(190, proxy.size.width * 0.23)))
-                            .shadow(color: .black.opacity(0.45), radius: 34, y: 18)
-
-                        HStack(alignment: .firstTextBaseline) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(song?.title ?? "Not Playing")
-                                    .font(MusicTypography.fixed(20, weight: .semibold))
-                                    .foregroundStyle(.white.opacity(0.94))
-                                    .lineLimit(1)
-                                Text(song?.artist ?? "Choose a song")
-                                    .font(MusicTypography.fixed(15, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.72))
-                                    .lineLimit(1)
-                            }
-                            Spacer()
-                        }
-
-                        FocusProgressBar(playback: playback)
-                            .frame(width: min(430, proxy.size.width * 0.38), height: 24)
-
-                        FocusTransportControls(playback: playback, showsSecondary: false)
-                            .frame(width: min(430, proxy.size.width * 0.38))
-                    }
-                    .padding(.leading, 118)
-                    .padding(.bottom, 58)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    FocusTransportControls(playback: playback, showsSecondary: false)
+                        .frame(width: focusPanelWidth(in: proxy.size))
                 }
+                .frame(width: focusPanelWidth(in: proxy.size), alignment: .center)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2 + 10)
+
+                focusTopChrome
             }
             .onHover { controlsHover = $0 }
         }
         .background(MusicPalette.spaceBlack)
+    }
+
+    private func focusPanelWidth(in size: CGSize) -> CGFloat {
+        min(430, max(350, size.width * 0.40))
+    }
+
+    private func focusArtworkSize(in size: CGSize) -> CGFloat {
+        min(260, max(190, min(size.width * 0.25, size.height * 0.40)))
+    }
+
+    private var focusTopChrome: some View {
+        HStack(spacing: 10) {
+            FocusTrafficLights()
+
+            HStack(spacing: 0) {
+                Button {
+                    model.playerPresentationMode = .normal
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(MusicTypography.fixed(18, weight: .medium))
+                        .frame(width: 42, height: 34)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .zIndex(2)
+
+                Divider()
+                    .frame(height: 20)
+                    .overlay(Color.white.opacity(0.18))
+
+                Button {
+                    model.playerPresentationMode = .compact
+                } label: {
+                    Image(systemName: "rectangle.on.rectangle")
+                        .font(MusicTypography.fixed(17, weight: .semibold))
+                        .frame(width: 46, height: 34)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .zIndex(2)
+            }
+            .foregroundStyle(.white.opacity(0.92))
+            .frame(height: 34)
+            .contentShape(Capsule(style: .continuous))
+            .background {
+                Capsule(style: .continuous)
+                    .fill(.ultraThinMaterial)
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.06))
+            }
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(Color.white.opacity(0.22), lineWidth: 1)
+            }
+
+            Spacer()
+        }
+        .zIndex(30)
+        .padding(.top, 24)
+        .padding(.horizontal, 28)
     }
 }
 
@@ -219,16 +235,16 @@ private struct CompactPlayerView: View {
             FocusBackdrop(song: playback.currentSong)
                 .ignoresSafeArea()
 
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    ArtworkView(song: playback.currentSong, size: 54)
-                    VStack(alignment: .leading, spacing: 3) {
+            VStack(spacing: 9) {
+                HStack(spacing: 10) {
+                    ArtworkView(song: playback.currentSong, size: 46)
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(playback.currentSong?.title ?? "Not Playing")
-                            .font(MusicTypography.fixed(17, weight: .semibold))
+                            .font(MusicTypography.fixed(16, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.94))
                             .lineLimit(1)
                         Text(playback.currentSong?.artist ?? "Choose a song")
-                            .font(MusicTypography.fixed(14, weight: .medium))
+                            .font(MusicTypography.fixed(13, weight: .medium))
                             .foregroundStyle(.white.opacity(0.68))
                             .lineLimit(1)
                     }
@@ -237,19 +253,22 @@ private struct CompactPlayerView: View {
                 .opacity(isHovering ? 0 : 1)
 
                 FocusProgressBar(playback: playback)
-                    .frame(height: 22)
+                    .frame(height: 19)
 
                 FocusTransportControls(playback: playback, showsSecondary: true)
+                    .frame(height: 48)
             }
             .padding(.horizontal, 28)
-            .padding(.vertical, 24)
+            .padding(.top, 18)
+            .padding(.bottom, 16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
             if isHovering {
                 compactHoverChrome
                     .transition(.opacity)
             }
         }
-        .frame(minWidth: 394, minHeight: 204)
+        .frame(width: 394, height: 204)
         .onHover { hovering in
             withAnimation(.snappy(duration: 0.16)) {
                 isHovering = hovering
@@ -259,16 +278,12 @@ private struct CompactPlayerView: View {
 
     private var compactHoverChrome: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 10) {
-                compactTrafficButton(color: Color(red: 1.0, green: 0.31, blue: 0.35), action: "close")
-                compactTrafficButton(color: Color(red: 1.0, green: 0.78, blue: 0.16), action: "minimize")
-                compactTrafficButton(color: Color(red: 0.20, green: 0.82, blue: 0.34), action: "zoom")
-            }
+            FocusTrafficLights()
 
             Spacer()
 
             HStack(spacing: 8) {
-                compactIconButton(systemName: "arrow.down.right.and.arrow.up.left", help: "Expand Player") {
+                compactIconButton(systemName: "arrow.up.left.and.arrow.down.right", help: "Expand Player") {
                     model.playerPresentationMode = .songFocus
                 }
                 compactIconButton(
@@ -291,18 +306,6 @@ private struct CompactPlayerView: View {
         .padding(.horizontal, 22)
     }
 
-    private func compactTrafficButton(color: Color, action: String) -> some View {
-        Button {
-            _ = MusicWindowControls.perform(action)
-        } label: {
-            Circle()
-                .fill(color)
-                .frame(width: 13, height: 13)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
     private func compactIconButton(systemName: String, help: String, action: @escaping () -> Void) -> some View {
         Button {
             action()
@@ -316,6 +319,59 @@ private struct CompactPlayerView: View {
         .foregroundStyle(.white.opacity(0.92))
         .help(help)
         .accessibilityLabel(help)
+    }
+}
+
+private struct FocusTrafficLights: View {
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            trafficButton(
+                color: Color(red: 1.0, green: 0.31, blue: 0.35),
+                symbolName: "xmark",
+                action: "close",
+                label: "Close"
+            )
+            trafficButton(
+                color: Color(red: 1.0, green: 0.78, blue: 0.16),
+                symbolName: "minus",
+                action: "minimize",
+                label: "Minimize"
+            )
+            trafficButton(
+                color: Color(red: 0.20, green: 0.82, blue: 0.34),
+                symbolName: "plus",
+                action: "zoom",
+                label: "Zoom"
+            )
+        }
+        .frame(height: 20)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+
+    private func trafficButton(color: Color, symbolName: String, action: String, label: String) -> some View {
+        Button {
+            _ = MusicWindowControls.perform(action)
+        } label: {
+            Circle()
+                .fill(color)
+                .frame(width: 12, height: 12)
+                .overlay {
+                    Image(systemName: symbolName)
+                        .font(MusicTypography.fixed(7, weight: .bold))
+                        .foregroundStyle(Color.black.opacity(0.72))
+                        .opacity(isHovering ? 1 : 0)
+                }
+                .frame(width: 16, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
     }
 }
 

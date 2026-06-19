@@ -15,6 +15,7 @@ instead of interrupting the current task or trusting memory.
 ## Protected UI Rules
 
 - Keep the normal Play Bar Liquid Glass neutral. Do not recolor, tint, or gradient the Play Bar surface from the current song artwork, thumbnail, logo, or dominant album colors. Artwork-derived color is only allowed in song-focus/fullscreen presentation backgrounds.
+- Keep the Play Bar pure Liquid Glass: do not add a white finish, frosted-white wash, or chalky haze over it. It should stay clear, neutral, and liquid rather than looking frosted.
 
 ## Completed
 
