@@ -51,15 +51,14 @@ struct NowPlayingBar: View {
                     .padding(.horizontal, contentPadding)
                     .background {
                         Capsule(style: .continuous)
-                            .fill(Color.black.opacity(expanded ? 0.016 : 0.008))
+                            .fill(Color.black.opacity(expanded ? 0.14 : 0.10))
                         Capsule(style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        nowPlayingTint.opacity(expanded ? 0.30 : 0.20),
-                                        Color.white.opacity(expanded ? 0.045 : 0.028),
+                                        Color.white.opacity(expanded ? 0.018 : 0.010),
                                         Color.clear,
-                                        Color.black.opacity(expanded ? 0.038 : 0.020)
+                                        Color.black.opacity(expanded ? 0.09 : 0.06)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -372,7 +371,7 @@ struct NowPlayingBar: View {
     }
 
     private var nowPlayingTint: Color {
-        Color.white.opacity(0.10)
+        Color.black.opacity(0.20)
     }
 
     private var remainingText: String {
@@ -401,12 +400,12 @@ struct NowPlayingBar: View {
     private func capsuleLighting(expanded: Bool) -> some View {
         ZStack {
             Capsule(style: .continuous)
-                .stroke(Color.white.opacity(expanded ? 0.26 : 0.17), lineWidth: 1)
+                .stroke(Color.white.opacity(expanded ? 0.20 : 0.13), lineWidth: 1)
                 .mask(
                     LinearGradient(
                         colors: [
                             Color.white,
-                            Color.white.opacity(0.55),
+                            Color.white.opacity(0.42),
                             Color.clear,
                             Color.clear
                         ],
@@ -437,9 +436,9 @@ struct NowPlayingBar: View {
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(expanded ? 0.10 : 0.07),
+                            Color.white.opacity(expanded ? 0.055 : 0.035),
                             Color.clear,
-                            Color.white.opacity(expanded ? 0.07 : 0.04)
+                            Color.white.opacity(expanded ? 0.045 : 0.026)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -493,6 +492,8 @@ private struct NowPlayingGlassSurface: ViewModifier {
                 .background {
                     Capsule(style: .continuous)
                         .fill(.ultraThinMaterial)
+                    Capsule(style: .continuous)
+                        .fill(Color.black.opacity(0.22))
                 }
         }
     }
