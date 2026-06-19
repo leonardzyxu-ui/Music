@@ -290,7 +290,7 @@ final class LibraryStore: ObservableObject {
         let cutoffIndex = min(19, ranked.count - 1)
         let cutoffScore = ranked[cutoffIndex].score
         let nextScore = ranked.indices.contains(cutoffIndex + 1) ? ranked[cutoffIndex + 1].score : cutoffScore - 2
-        let targetScore = (cutoffScore + nextScore) / 2
+        let targetScore = Self.demotedSmartPickerScore(cutoffScore: cutoffScore, nextScore: nextScore)
 
         var nextStats = database.stats[song.id] ?? ListeningStats(songID: song.id)
         nextStats.smartPickerRankOverride = targetScore
@@ -320,6 +320,9 @@ final class LibraryStore: ObservableObject {
         if event.manualSelection {
             next.manualSelections += 1
             next.lastManualSelectionAt = event.createdAt
+        }
+        if event.listenedSeconds > 0 || event.manualSelection {
+            next.smartPickerRankOverride = nil
         }
         next.rankScore = recentListeningMinutes(for: event.songID, including: event, now: event.createdAt)
 
@@ -582,6 +585,13 @@ final class LibraryStore: ObservableObject {
 
     private func rankSongs() -> [Song] {
         rankedSongScores().map(\.song)
+    }
+
+    nonisolated static func demotedSmartPickerScore(cutoffScore: Double, nextScore: Double) -> Double {
+        if cutoffScore > nextScore {
+            return (cutoffScore + nextScore) / 2
+        }
+        return nextScore - 0.01
     }
 
     private func rankedSongScores(excluding excludedID: String? = nil) -> [(song: Song, score: Double)] {

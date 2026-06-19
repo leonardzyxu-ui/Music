@@ -72,3 +72,4 @@ instead of interrupting the current task or trusting memory.
 - Enforce sane minimum/fixed sizes for song-focus and compact player modes so they cannot be crushed into top-bar-only or partial-artwork states.
 - Enforce the main Music window minimum size at the exact healthy boundary Leo showed, so resizing cannot collapse it into only the traffic lights or crop any UI.
 - Tune the main sidebar width/density closer to Finder/Apple Music: narrower pane, less empty distance between labels and counts, while preserving comfortable click targets and current rounded/sidebar look.
+- Fix `Remove From Your Pick` so choosing it actually removes/demotes the song below tied Your Pick cutoff scores, and allow later listening to earn the song back naturally.

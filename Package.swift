@@ -22,6 +22,10 @@ let package = Package(
                 .linkedFramework("Network"),
                 .linkedFramework("WebKit")
             ]
+        ),
+        .testTarget(
+            name: "JarvisMusicTests",
+            dependencies: ["JarvisMusic"]
         )
     ]
 )
