@@ -19,6 +19,8 @@ instead of interrupting the current task or trusting memory.
 
 ## Completed
 
+- Fix Window 3 compact-player hover controls so they stay fully inside the rounded compact window, remain reachable, and do not clip off the top.
+- Add a compact-player menu action to pin/unpin the Music window above normal windows if it can be done safely without disturbing the accepted compact UI.
 - Add an explicit persistent queue file for Leo's sudden ideas and non-interrupting feature requests.
 - Redesign YouTube Import as a guided step flow: search/select, download progress, review/rename, confirm, return to All Songs, select the imported song, and cue it paused at the start.
 - Add manual `Your Pick` refresh.

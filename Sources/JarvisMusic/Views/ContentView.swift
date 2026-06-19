@@ -224,6 +224,7 @@ private struct CompactPlayerView: View {
     @ObservedObject var model: AppModel
     @ObservedObject private var playback: PlaybackStore
     @State private var isHovering = false
+    @State private var isPinnedToTop = false
 
     init(model: AppModel) {
         self.model = model
@@ -231,26 +232,21 @@ private struct CompactPlayerView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             FocusBackdrop(song: playback.currentSong)
                 .ignoresSafeArea()
 
             VStack(spacing: 9) {
-                HStack(spacing: 10) {
-                    ArtworkView(song: playback.currentSong, size: 46)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(playback.currentSong?.title ?? "Not Playing")
-                            .font(MusicTypography.fixed(16, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.94))
-                            .lineLimit(1)
-                        Text(playback.currentSong?.artist ?? "Choose a song")
-                            .font(MusicTypography.fixed(13, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.68))
-                            .lineLimit(1)
+                ZStack {
+                    compactSongHeader
+                        .opacity(isHovering ? 0 : 1)
+
+                    if isHovering {
+                        compactHoverChrome
+                            .transition(.opacity)
                     }
-                    Spacer()
                 }
-                .opacity(isHovering ? 0 : 1)
+                .frame(height: 46)
 
                 FocusProgressBar(playback: playback)
                     .frame(height: 19)
@@ -263,16 +259,32 @@ private struct CompactPlayerView: View {
             .padding(.bottom, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-            if isHovering {
-                compactHoverChrome
-                    .transition(.opacity)
-            }
         }
         .frame(width: 394, height: 204)
         .onHover { hovering in
             withAnimation(.snappy(duration: 0.16)) {
                 isHovering = hovering
             }
+        }
+        .onAppear {
+            isPinnedToTop = MusicWindowActions.isPinnedToTop
+        }
+    }
+
+    private var compactSongHeader: some View {
+        HStack(spacing: 10) {
+            ArtworkView(song: playback.currentSong, size: 46)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(playback.currentSong?.title ?? "Not Playing")
+                    .font(MusicTypography.fixed(16, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.94))
+                    .lineLimit(1)
+                Text(playback.currentSong?.artist ?? "Choose a song")
+                    .font(MusicTypography.fixed(13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.68))
+                    .lineLimit(1)
+            }
+            Spacer()
         }
     }
 
@@ -283,6 +295,23 @@ private struct CompactPlayerView: View {
             Spacer()
 
             HStack(spacing: 8) {
+                Menu {
+                    Button(isPinnedToTop ? "Unpin from Top" : "Pin to Top") {
+                        isPinnedToTop = MusicWindowActions.togglePinnedToTop()
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(MusicTypography.fixed(18, weight: .semibold))
+                        .frame(width: 34, height: 34)
+                        .contentShape(Circle())
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .foregroundStyle(isPinnedToTop ? Color.red : Color.white.opacity(0.92))
+                .help(isPinnedToTop ? "Unpin from Top" : "Pin to Top")
+                .accessibilityLabel(isPinnedToTop ? "Unpin from Top" : "Pin to Top")
+
                 compactIconButton(systemName: "arrow.up.left.and.arrow.down.right", help: "Expand Player") {
                     model.playerPresentationMode = .songFocus
                 }
@@ -302,8 +331,6 @@ private struct CompactPlayerView: View {
                     .stroke(Color.white.opacity(0.16), lineWidth: 1)
             }
         }
-        .padding(.top, 16)
-        .padding(.horizontal, 22)
     }
 
     private func compactIconButton(systemName: String, help: String, action: @escaping () -> Void) -> some View {

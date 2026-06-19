@@ -73,6 +73,7 @@ enum MusicWindowActions {
     private static var isCompactPresentationActive = false
     private static var currentPresentationMode: PlayerPresentationMode = .normal
     private static var storedNormalFrame: NSRect?
+    private static var pinnedToTop = false
     private static let resizeDelegate = MusicWindowResizeDelegate()
 
     static func mainWindow() -> NSWindow? {
@@ -137,11 +138,30 @@ enum MusicWindowActions {
         applyChrome(to: window, mode: currentPresentationMode)
     }
 
+    static var isPinnedToTop: Bool {
+        pinnedToTop
+    }
+
+    @discardableResult
+    static func togglePinnedToTop() -> Bool {
+        setPinnedToTop(!pinnedToTop)
+        return pinnedToTop
+    }
+
+    static func setPinnedToTop(_ enabled: Bool) {
+        pinnedToTop = enabled
+        if let window = mainWindow() {
+            window.level = enabled ? .floating : .normal
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
     private static func applyChrome(to window: NSWindow, mode: PlayerPresentationMode) {
         installResizeProtection(on: window)
         window.contentMinSize = contentMinimumSize(for: mode)
         window.minSize = minimumSize(for: mode)
         window.maxSize = maximumSize(for: mode)
+        window.level = pinnedToTop ? .floating : .normal
         window.hasShadow = true
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
