@@ -244,6 +244,7 @@ private struct CompactPlayerView: View {
                     if isHovering {
                         compactHoverChrome
                             .transition(.opacity)
+                            .offset(y: -8)
                     }
                 }
                 .frame(height: 46)
