@@ -117,6 +117,16 @@ enum YouTubeImportError: LocalizedError {
         }
 
         if lower.containsAny([
+            "remote component challenge solver",
+            "remote-components",
+            "js challenges",
+            "javascript challenge",
+            "challenge solver script"
+        ]) {
+            return .helperFailed("YouTube asked for a JavaScript challenge solver. Music now enables yt-dlp's EJS helper automatically; retry the import.")
+        }
+
+        if lower.containsAny([
             "video unavailable",
             "this video is unavailable",
             "has been removed",
@@ -158,6 +168,7 @@ enum YouTubeImportError: LocalizedError {
 @MainActor
 final class YouTubeImportService {
     static let audioOnlyFormatSelector = "bestaudio[acodec!=none]/bestaudio"
+    private static let remoteComponentArguments = ["--remote-components", "ejs:github"]
 
     private enum HelperTimeout {
         static let metadata: TimeInterval = 35
@@ -214,6 +225,7 @@ final class YouTubeImportService {
                 "--skip-download",
                 "--no-playlist",
                 "--socket-timeout", "20",
+            ] + Self.remoteComponentArguments + [
                 url.absoluteString
             ],
             timeoutSeconds: HelperTimeout.metadata
@@ -247,6 +259,7 @@ final class YouTubeImportService {
                 "--flat-playlist",
                 "--no-warnings",
                 "--socket-timeout", "15",
+            ] + Self.remoteComponentArguments + [
                 "ytsearch\(safeLimit):\(cleanQuery)"
             ],
             timeoutSeconds: HelperTimeout.search
@@ -284,6 +297,7 @@ final class YouTubeImportService {
                 "--socket-timeout", "20",
                 "--format", Self.audioOnlyFormatSelector,
                 "--print", "%(format_id)s\t%(vcodec)s\t%(acodec)s\t%(ext)s",
+            ] + Self.remoteComponentArguments + [
                 url.absoluteString
             ],
             timeoutSeconds: HelperTimeout.metadata
@@ -333,7 +347,7 @@ final class YouTubeImportService {
         defer { try? FileManager.default.removeItem(at: tempDir) }
 
         let outputTemplate = tempDir.appendingPathComponent("audio.%(ext)s").path
-        progress?(.download, "Extracting audio with yt-dlp. This can take a moment.", 0.12)
+        progress?(.download, "Extracting audio with yt-dlp and solving YouTube's JavaScript challenge if needed.", 0.12)
         let downloadProgress = YouTubeDownloadProgressReporter { fraction, detail in
             progress?(.download, detail, fraction)
         }
@@ -355,6 +369,7 @@ final class YouTubeImportService {
                 "--add-metadata",
                 "--ppa", "ffmpeg:-id3v2_version 3",
                 "--output", outputTemplate,
+            ] + Self.remoteComponentArguments + [
                 url.absoluteString
             ],
             timeoutSeconds: HelperTimeout.download,

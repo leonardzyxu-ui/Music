@@ -248,6 +248,12 @@ def assert_youtube_error_classification(client: MusicBridgeClient) -> None:
             "youtube_helper_timeout",
             True,
         ),
+        (
+            "[youtube] [jsc] Remote component challenge solver script (node) was skipped. It may be required to solve JS challenges. You can enable the download with --remote-components ejs:github",
+            False,
+            "youtube_helper_failed",
+            True,
+        ),
     ]
     for message, timed_out, expected_code, expected_retryable in cases:
         payload = client.youtube_error_classification(message, timed_out=timed_out)
