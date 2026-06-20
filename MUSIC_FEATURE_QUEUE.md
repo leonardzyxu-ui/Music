@@ -19,6 +19,7 @@ instead of interrupting the current task or trusting memory.
 
 ## Completed
 
+- Raise Window 3 hover traffic-light/control row a bit more so the red traffic light sits higher and closer to the compact window corner arc.
 - Raise Window 3 hover traffic-light/control row slightly so the red traffic light sits concentric with the compact window rounding again.
 - Fix Window 3 compact-player hover controls so they stay fully inside the rounded compact window, remain reachable, and do not clip off the top.
 - Add a compact-player menu action to pin/unpin the Music window above normal windows if it can be done safely without disturbing the accepted compact UI.
