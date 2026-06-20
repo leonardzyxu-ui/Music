@@ -83,6 +83,20 @@ enum MusicWindowActions {
             ?? NSApp.windows.first { $0.isVisible }
     }
 
+    @discardableResult
+    static func showExistingWindowIfPossible() -> Bool {
+        guard let window = NSApp.windows.first(where: { candidate in
+            candidate.title == AppConfiguration.appName || !candidate.isMiniaturized
+        }) ?? NSApp.windows.first else {
+            return false
+        }
+        applyCurrentChrome(to: window)
+        window.deminiaturize(nil)
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        return true
+    }
+
     static func applyPlayerPresentationMode(_ mode: PlayerPresentationMode) {
         guard let window = mainWindow() else { return }
         currentPresentationMode = mode
@@ -165,9 +179,17 @@ enum MusicWindowActions {
         window.hasShadow = true
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
-        window.styleMask.insert(.titled)
-        window.styleMask.insert(.fullSizeContentView)
-        window.styleMask.insert([.closable, .miniaturizable, .resizable])
+        var desiredStyleMask = window.styleMask
+        desiredStyleMask.insert([.closable, .miniaturizable, .resizable, .fullSizeContentView])
+        switch mode {
+        case .normal:
+            desiredStyleMask.insert(.titled)
+        case .songFocus, .compact:
+            desiredStyleMask.remove(.titled)
+        }
+        if window.styleMask != desiredStyleMask {
+            window.styleMask = desiredStyleMask
+        }
         window.toolbarStyle = .unified
         if #available(macOS 11.0, *) {
             window.titlebarSeparatorStyle = .none
@@ -183,13 +205,11 @@ enum MusicWindowActions {
             window.isMovableByWindowBackground = false
             resetRoundedMask(on: window)
         case .songFocus:
-            window.styleMask.remove(.titled)
             window.isOpaque = false
             window.backgroundColor = .clear
             window.isMovableByWindowBackground = false
             applyRoundedMask(on: window, radius: 34)
         case .compact:
-            window.styleMask.remove(.titled)
             window.isOpaque = false
             window.backgroundColor = .clear
             window.isMovableByWindowBackground = true
@@ -331,11 +351,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            _ = MusicWindowActions.showExistingWindowIfPossible()
+        }
         scheduleInitialWindowFit()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
         MusicWindowActions.refreshVisibleWindows()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            _ = MusicWindowActions.showExistingWindowIfPossible()
+        }
+        return true
     }
 
     private func scheduleInitialWindowFit() {
