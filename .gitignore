@@ -10,6 +10,7 @@ dist/
 
 # Codex/local runtime state
 .codex/
+.playwright-cli/
 
 # Python caches
 __pycache__/
@@ -22,8 +23,21 @@ Tools/python/
 Tools/bin/
 Tools/*.whl
 
+# Local music library references and media should never enter the source repo.
+SharedMP3Library
+*.mp3
+*.m4a
+*.aac
+*.wav
+*.flac
+
 # Local visual QA captures can contain desktop context; keep them local.
-screenshots/
+/screenshots/
+website/source-pictures/
+website/qa/
+website/downloads/
+website/updates/
+website/appcast.xml
 
 # Logs and temporary files
 *.log
