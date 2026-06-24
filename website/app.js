@@ -2,6 +2,89 @@ const revealItems = document.querySelectorAll(".reveal");
 const navLinks = document.querySelectorAll(".nav-links a");
 const sections = [...navLinks].map((link) => document.querySelector(link.getAttribute("href")));
 const captureTarget = new URLSearchParams(window.location.search).get("capture");
+const heroWindow = document.querySelector(".hero-window");
+window.musicHeroAnimationState = {
+  heroLoadedAt: null,
+  startedAt: null,
+  status: "pending"
+};
+document.documentElement.dataset.heroAnimationStatus = "pending";
+
+const startHeroAnimation = () => {
+  window.requestAnimationFrame(() => {
+    document.documentElement.classList.remove("hero-animation-pending");
+    document.documentElement.classList.add("hero-assets-ready");
+    window.musicHeroAnimationState.startedAt = performance.now();
+    window.musicHeroAnimationState.status = "started";
+    document.documentElement.dataset.heroAnimationStatus = "started";
+    document.documentElement.dataset.heroAnimationStartedAt = String(
+      window.musicHeroAnimationState.startedAt
+    );
+  });
+};
+
+const prepareHeroAnimation = async () => {
+  if (!heroWindow) {
+    startHeroAnimation();
+    return;
+  }
+
+  try {
+    const heroURL = heroWindow.currentSrc || heroWindow.getAttribute("src") || heroWindow.src;
+    if (heroWindow.complete && heroWindow.naturalWidth > 0) {
+      window.musicHeroAnimationState.heroLoadedAt = performance.now();
+      document.documentElement.dataset.heroImageLoadedAt = String(
+        window.musicHeroAnimationState.heroLoadedAt
+      );
+      startHeroAnimation();
+      return;
+    }
+
+    await new Promise((resolve) => {
+      const preloader = new Image();
+      let interval = 0;
+      const finish = () => {
+        if (interval) {
+          window.clearInterval(interval);
+        }
+        resolve();
+      };
+      preloader.decoding = "async";
+      preloader.fetchPriority = "high";
+      preloader.addEventListener("load", finish, { once: true });
+      preloader.addEventListener("error", finish, { once: true });
+      preloader.src = heroURL;
+      if (preloader.complete && preloader.naturalWidth > 0) {
+        finish();
+        return;
+      }
+      interval = window.setInterval(() => {
+        if (
+          (heroWindow.complete && heroWindow.naturalWidth > 0)
+          || (preloader.complete && preloader.naturalWidth > 0)
+        ) {
+          finish();
+        }
+      }, 40);
+    });
+
+    if (heroWindow.decode) {
+      heroWindow.decode().catch(() => {
+        // The hero file has loaded. Decode is best-effort so the gate cannot stall.
+      });
+    }
+  } catch {
+    // If the preload fails, start the page instead of leaving visitors stuck.
+  }
+
+  window.musicHeroAnimationState.heroLoadedAt = performance.now();
+  document.documentElement.dataset.heroImageLoadedAt = String(
+    window.musicHeroAnimationState.heroLoadedAt
+  );
+  startHeroAnimation();
+};
+
+prepareHeroAnimation();
 
 const revealObserver = new IntersectionObserver(
   (entries) => {

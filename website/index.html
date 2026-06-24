@@ -8,14 +8,41 @@
       name="description"
       content="A native macOS music app with local playback, Your Pick, YouTube import, compact players, and a local bridge prepared for Jarvis."
     />
+    <script>
+      document.documentElement.classList.add("hero-animation-pending");
+    </script>
     <link rel="icon" href="assets/brand/new-music-logo.png" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="preload" as="image" href="assets/screenshots/hero-final.png" fetchpriority="high" />
+    <link rel="stylesheet" href="styles.css?v=20260624-hero-gate2" />
+    <noscript>
+      <style>
+        .hero-preload-screen {
+          display: none;
+        }
+
+        .page-shell {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+      </style>
+    </noscript>
   </head>
   <body>
+    <div class="hero-preload-screen" role="status" aria-live="polite">
+      <div class="hero-preload-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="hero-preload-name">Music</div>
+    </div>
+
     <div class="page-shell">
       <header class="site-header" aria-label="Site navigation">
         <a class="brand-lockup" href="#top" aria-label="Music home">
-          <img src="assets/brand/new-music-logo.png" alt="" />
+          <img src="assets/brand/new-music-logo.png" alt="" loading="lazy" decoding="async" fetchpriority="low" />
           <span>Music</span>
         </a>
         <nav class="nav-links" aria-label="Page sections">
@@ -51,6 +78,8 @@
             <img
               class="hero-window"
               src="assets/screenshots/hero-final.png"
+              fetchpriority="high"
+              decoding="async"
               alt="Music app main library window with sidebar, songs list, and liquid glass play bar"
             />
             <div class="hero-reflection" aria-hidden="true"></div>
@@ -85,6 +114,9 @@
           <div class="wide-showcase reveal">
             <img
               src="assets/screenshots/main-library-current.png"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
               alt="Music app All Songs library view"
             />
           </div>
@@ -114,6 +146,9 @@
           <figure class="your-pick-visual reveal">
             <img
               src="assets/screenshots/your-pick-distorted.png"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
               alt="Stylized Music Your Pick view with the recommendation queue visible"
             />
           </figure>
@@ -150,18 +185,27 @@
               <figure class="import-slide" data-title="Choose" data-step="Step 1 of 3">
                 <img
                   src="assets/screenshots/youtube-import-choose.png"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
                   alt="YouTube Import choose step with search results and a selected video"
                 />
               </figure>
               <figure class="import-slide" data-title="Download" data-step="Step 2 of 3">
                 <img
                   src="assets/screenshots/youtube-import-download.png"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
                   alt="YouTube Import download step with progress bar"
                 />
               </figure>
               <figure class="import-slide" data-title="Review" data-step="Step 3 of 3">
                 <img
                   src="assets/screenshots/youtube-import-review.png"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
                   alt="YouTube Import review step for renaming the imported song"
                 />
               </figure>
@@ -203,11 +247,17 @@
               <img
                 class="focus-large-shot"
                 src="assets/screenshots/focus-window.png"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
                 alt="Large focused song window with album artwork and playback controls"
               />
               <img
                 class="focus-small-shot"
                 src="assets/screenshots/compact-player.png"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
                 alt="Compact player window overlapped above the large focus window for comparison"
               />
             </figure>
@@ -271,24 +321,24 @@
             </p>
           </div>
           <div class="download-panel reveal">
-            <img src="assets/brand/new-music-logo.png" alt="" />
+            <img src="assets/brand/new-music-logo.png" alt="" loading="lazy" decoding="async" fetchpriority="low" />
             <div>
               <h3>Music for macOS</h3>
               <p>Native playback, local library, guided import, and compact windows.</p>
-              <p class="download-version">Version 0.1.5 (build 6)</p>
+              <p class="download-version">Version 0.1.6 (build 7)</p>
             </div>
             <a class="button button-red" href="downloads/Music.dmg" download>Download DMG</a>
           </div>
         </section>
 
         <section class="finish-section section-snap">
-          <img class="finish-symbol-logo reveal" src="assets/brand/new-music-logo.png" alt="" />
+          <img class="finish-symbol-logo reveal" src="assets/brand/new-music-logo.png" alt="" loading="lazy" decoding="async" fetchpriority="low" />
           <p class="finish-slogan reveal">Own your library. Play it beautifully.</p>
           <p class="copyright-line reveal">© Leo Xu 2026</p>
         </section>
       </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20260624-hero-gate2"></script>
   </body>
 </html>
