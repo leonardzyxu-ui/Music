@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Music for macOS</title>
+    <meta
+      name="description"
+      content="A native macOS music app with local playback, Your Pick, YouTube import, compact players, and a local bridge prepared for Jarvis."
+    />
+    <script>
+      document.documentElement.classList.add("hero-animation-pending");
+    </script>
+    <link rel="icon" href="assets/brand/new-music-logo.png" />
+    <link rel="preload" as="image" href="assets/screenshots/hero-final.png" fetchpriority="high" />
+    <link rel="stylesheet" href="styles.css?v=20260624-hero-gate2" />
+    <noscript>
+      <style>
+        .hero-preload-screen {
+          display: none;
+        }
+
+        .page-shell {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body>
+    <div class="hero-preload-screen" role="status" aria-live="polite">
+      <div class="hero-preload-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="hero-preload-name">Music</div>
+    </div>
+
+    <div class="page-shell">
+      <header class="site-header" aria-label="Site navigation">
+        <a class="brand-lockup" href="#top" aria-label="Music home">
+          <img src="assets/brand/new-music-logo.png" alt="" loading="lazy" decoding="async" fetchpriority="low" />
+          <span>Music</span>
+        </a>
+        <nav class="nav-links" aria-label="Page sections">
+          <a href="#player">Player</a>
+          <a href="#your-pick">Your Pick</a>
+          <a href="#import">Import</a>
+          <a href="#windows">Windows</a>
+          <a href="#jarvis">Jarvis</a>
+          <a href="#download">Download</a>
+        </nav>
+        <a class="header-cta" href="#download">Download</a>
+      </header>
+
+      <main id="top">
+        <section class="hero section-snap" id="preview">
+          <div class="hero-copy reveal">
+            <p class="eyebrow">Native macOS playback</p>
+            <h1>Music. Native again.</h1>
+            <p class="hero-subtitle">
+              Local MP3 playback, smart picks, guided YouTube import, compact players,
+              and a local bridge prepared for a future Jarvis assistant.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-red" href="#player">
+                <span class="button-icon">▶</span>
+                See the app
+              </a>
+              <a class="button button-dark" href="#import">Explore import</a>
+            </div>
+          </div>
+
+          <div class="hero-stage reveal" aria-label="Music app preview">
+            <img
+              class="hero-window"
+              src="assets/screenshots/hero-final.png"
+              fetchpriority="high"
+              decoding="async"
+              alt="Music app main library window with sidebar, songs list, and liquid glass play bar"
+            />
+            <div class="hero-reflection" aria-hidden="true"></div>
+          </div>
+
+          <div class="hero-specs reveal" aria-label="Product highlights">
+            <div>
+              <strong>Local</strong>
+              <span>MP3 library</span>
+            </div>
+            <div>
+              <strong>Native</strong>
+              <span>macOS controls</span>
+            </div>
+            <div>
+              <strong>Local</strong>
+              <span>future Jarvis bridge</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="feature-band" id="player">
+          <div class="section-heading reveal">
+            <p class="eyebrow">The player</p>
+            <h2>Everything feels owned by the app.</h2>
+            <p>
+              a native interface with a real library, precise controls, and a play bar
+              that stays calm over the music.
+            </p>
+          </div>
+
+          <div class="wide-showcase reveal">
+            <img
+              src="assets/screenshots/main-library-current.png"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
+              alt="Music app All Songs library view"
+            />
+          </div>
+
+          <div class="feature-copy-row">
+            <div class="feature-copy reveal">
+              <span>Local first</span>
+              <p>Music references the shared MP3 folder directly, keeps files in one place, and refreshes when the library changes. This allows you to listen to your favorite songs, without WiFi.</p>
+            </div>
+            <div class="feature-copy reveal">
+              <span>Native control</span>
+              <p>Playback, queue state, and now-playing information live in the macOS app.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="spotlight section-snap" id="your-pick">
+          <div class="spotlight-copy reveal">
+            <p class="eyebrow">Your Pick</p>
+            <h2>A queue that learns from listening.</h2>
+            <p>
+              Plays, skips, repeats, manual selections, completion, and recent listening,
+              you name it... all contribute to a smart recommendation snapshot of your
+              favorite songs.
+            </p>
+          </div>
+          <figure class="your-pick-visual reveal">
+            <img
+              src="assets/screenshots/your-pick-distorted.png"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
+              alt="Stylized Music Your Pick view with the recommendation queue visible"
+            />
+          </figure>
+        </section>
+
+        <section class="import-section" id="import">
+          <div class="section-heading reveal">
+            <p class="eyebrow">YouTube import</p>
+            <h2>Search, choose, download, rename, done.</h2>
+            <p>
+              Music keeps the import flow inside the app. This way, you can download
+              your favorite songs for free, rename them, and keep them forever.
+            </p>
+          </div>
+
+          <div class="import-slider reveal" data-slider>
+            <div class="import-slider-header">
+              <div>
+                <span class="slider-step-label" data-slider-step>Step 1 of 3</span>
+                <strong data-slider-title>Choose</strong>
+              </div>
+              <div class="slider-controls" aria-label="YouTube import slider controls">
+                <button class="slider-button" type="button" data-slider-prev aria-label="Previous YouTube import step">
+                  <span aria-hidden="true">←</span>
+                  Previous
+                </button>
+                <button class="slider-button" type="button" data-slider-next aria-label="Next YouTube import step">
+                  Next
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </div>
+            <div class="import-track" data-slider-track tabindex="0" aria-label="YouTube import step screenshots">
+              <figure class="import-slide" data-title="Choose" data-step="Step 1 of 3">
+                <img
+                  src="assets/screenshots/youtube-import-choose.png"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                  alt="YouTube Import choose step with search results and a selected video"
+                />
+              </figure>
+              <figure class="import-slide" data-title="Download" data-step="Step 2 of 3">
+                <img
+                  src="assets/screenshots/youtube-import-download.png"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                  alt="YouTube Import download step with progress bar"
+                />
+              </figure>
+              <figure class="import-slide" data-title="Review" data-step="Step 3 of 3">
+                <img
+                  src="assets/screenshots/youtube-import-review.png"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                  alt="YouTube Import review step for renaming the imported song"
+                />
+              </figure>
+            </div>
+            <div class="slider-dots" aria-label="YouTube import step navigation">
+              <button class="active" type="button" data-slider-dot aria-label="Show choose step">Choose</button>
+              <button type="button" data-slider-dot aria-label="Show download step">Download</button>
+              <button type="button" data-slider-dot aria-label="Show review step">Review</button>
+            </div>
+          </div>
+
+          <div class="steps">
+            <div class="step reveal">
+              <span>1</span>
+              <h3>Find a video</h3>
+              <p>Search inside Music or paste a URL for content you are allowed to save.</p>
+            </div>
+            <div class="step reveal">
+              <span>2</span>
+              <h3>Watch progress</h3>
+              <p>Follow audio extraction, metadata, cover art, and library refresh in one bar.</p>
+            </div>
+            <div class="step reveal">
+              <span>3</span>
+              <h3>Review and save</h3>
+              <p>Rename the song, keep the thumbnail, and land back in All Songs with it selected.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="focus-section" id="windows">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Windows</p>
+            <h2>Big when you want the song. Small when you only need controls.</h2>
+          </div>
+
+          <div class="window-gallery">
+            <figure class="focus-comparison reveal">
+              <img
+                class="focus-large-shot"
+                src="assets/screenshots/focus-window.png"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
+                alt="Large focused song window with album artwork and playback controls"
+              />
+              <img
+                class="focus-small-shot"
+                src="assets/screenshots/compact-player.png"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
+                alt="Compact player window overlapped above the large focus window for comparison"
+              />
+            </figure>
+          </div>
+        </section>
+
+        <section class="jarvis-section" id="jarvis">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Jarvis bridge</p>
+            <h2>Ready for a local assistant.</h2>
+            <p>
+              Jarvis is an unreleased local assistant currently under development.
+              Music is being prepared with a local bridge so that our Jarvis assistant
+              can ask for candidates, pick naturally, and control playback autonomously.
+            </p>
+          </div>
+
+          <div class="bridge-panel reveal">
+            <div class="bridge-copy">
+              <h3>Future-ready, local-only, scriptable.</h3>
+              <p>
+                When Jarvis is connected, it can search songs, refresh the library,
+                refresh Your Pick, open YouTube import, play by id, pause, resume,
+                stop, and read now-playing state.
+              </p>
+              <div class="bridge-actions" aria-label="Bridge actions">
+                <span>status</span>
+                <span>search</span>
+                <span>play by ID</span>
+                <span>refresh library</span>
+                <span>refresh Your Pick</span>
+              </div>
+            </div>
+            <div class="bridge-signal" aria-label="Bridge readiness summary">
+              <div>
+                <span>Scope</span>
+                <strong>Local only</strong>
+                <p>Designed for control from this Mac, not a cloud service.</p>
+              </div>
+              <div>
+                <span>Contract</span>
+                <strong>Structured responses</strong>
+                <p>Jarvis can receive predictable status, search, and playback results.</p>
+              </div>
+              <div>
+                <span>Status</span>
+                <strong>Ready for connection</strong>
+                <p>The app side is prepared for a future assistant workflow.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="download-section section-snap" id="download">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Download</p>
+            <h2>The Mac build belongs here.</h2>
+            <p>
+              Download Music for macOS as a packaged DMG, install it in Applications,
+              and start building a local library that feels at home on the Mac.
+            </p>
+          </div>
+          <div class="download-panel reveal">
+            <img src="assets/brand/new-music-logo.png" alt="" loading="lazy" decoding="async" fetchpriority="low" />
+            <div>
+              <h3>Music for macOS</h3>
+              <p>Native playback, local library, guided import, and compact windows.</p>
+              <p class="download-version">Version 0.1.7 (build 8)</p>
+            </div>
+            <a class="button button-red" href="downloads/Music.dmg" download>Download DMG</a>
+          </div>
+        </section>
+
+        <section class="finish-section section-snap">
+          <img class="finish-symbol-logo reveal" src="assets/brand/new-music-logo.png" alt="" loading="lazy" decoding="async" fetchpriority="low" />
+          <p class="finish-slogan reveal">Own your library. Play it beautifully.</p>
+          <p class="copyright-line reveal">© Leo Xu 2026</p>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js?v=20260624-hero-gate2"></script>
+  </body>
+</html>
